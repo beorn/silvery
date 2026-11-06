@@ -51,7 +51,7 @@ export interface StyleOptions {
 
 /**
  * Minimal theme interface for token resolution. Two forms:
- * - Concrete types (Theme from @silvery/schemes) — no index signature needed
+ * - Concrete types (Theme from @silvery/ansi/schemes) — no index signature needed
  * - Inline objects in tests/config — use `as ThemeLike` or `satisfies ThemeLike`
  *
  * The `resolveThemeColor` function accepts `object` to avoid the TS index

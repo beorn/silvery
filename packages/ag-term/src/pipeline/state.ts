@@ -15,10 +15,10 @@
  */
 
 import type { Theme } from "@silvery/ansi"
-// The `@silvery/schemes` re-export of ansi16DarkTheme is pre-populated with
+// The `@silvery/ansi/schemes` re-export of ansi16DarkTheme is pre-populated with
 // Sterling flat tokens; `@silvery/ansi`'s is not. Bare-test render paths need
 // the flat tokens to resolve `$fg-accent` / `$bg-surface-subtle` etc.
-import { ansi16DarkTheme } from "@silvery/schemes"
+import { ansi16DarkTheme } from "@silvery/ansi/schemes"
 
 // ============================================================================
 // Active Theme (fallback only — not set by ThemeProvider)
@@ -31,7 +31,7 @@ import { ansi16DarkTheme } from "@silvery/schemes"
  * has no pushContextTheme frame on the stack, e.g. a bare test that renders
  * without ThemeProvider.
  *
- * `@silvery/schemes`'s `ansi16DarkTheme` ships with Sterling flat tokens baked
+ * `@silvery/ansi/schemes`'s `ansi16DarkTheme` ships with Sterling flat tokens baked
  * in, so bare-test render paths resolve `$fg-accent` / `$bg-surface-subtle` /
  * etc. without needing an explicit ThemeProvider.
  */

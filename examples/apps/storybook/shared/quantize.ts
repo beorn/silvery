@@ -27,7 +27,7 @@
 
 import { pickColorLevel, quantizeHex, type ColorLevel } from "@silvery/ansi"
 import type { Theme as LegacyTheme } from "@silvery/ansi"
-import type { Theme as SterlingTheme } from "@silvery/design"
+import type { Theme as SterlingTheme } from "@silvery/color/design"
 
 /** Quantize the legacy (silvery/ui) Theme. Returns a new object; inputs not mutated. */
 export function quantizeLegacyTheme(theme: LegacyTheme, tier: ColorLevel): LegacyTheme {

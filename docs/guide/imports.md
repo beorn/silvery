@@ -165,15 +165,19 @@ import { wrapAnsi } from "silvery/ui/ansi"
 
 App composition, state management, commands, and keybindings. Currently in development — API will be documented when released.
 
-### `@silvery/schemes` -- theming system
+### `@silvery/ansi/schemes` -- theming system
 
 Semantic color tokens, built-in themes, theme generation and detection.
 
 ```ts
-import { defaultDarkTheme, defaultLightTheme, generateTheme, detectTheme } from "@silvery/schemes"
-import { ThemeProvider } from "silvery"
-import { useTheme } from "@silvery/schemes"
-import type { Theme } from "@silvery/schemes"
+import {
+  defaultDarkTheme,
+  defaultLightTheme,
+  generateTheme,
+  detectTheme,
+} from "@silvery/ansi/schemes"
+import { ThemeProvider, useTheme } from "silvery"
+import type { Theme } from "@silvery/color/design"
 ```
 
 ### `@silvery/test` -- testing utilities

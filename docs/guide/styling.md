@@ -804,7 +804,7 @@ CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizi
 
 The principles above are about **using** tokens. This section is about **picking, building, and swapping the theme behind them**. Without an explicit theme, silvery auto-detects the terminal's palette and runs it through [Sterling](/reference/sterling) to produce a complete theme — your app matches whatever the user has configured (Dracula, Nord, Catppuccin, etc.) with zero work on your end. Reach for the APIs below when you want to take control.
 
-`@silvery/design` owns Sterling, its types and CSS helpers. `@silvery/schemes`
+`@silvery/color/design` owns Sterling, its types and CSS helpers. `@silvery/ansi/schemes`
 owns terminal catalogs and tooling. The examples below use `silvery/theme`,
 which re-exports both. See the [theme reference](/reference/theme) and
 [Sterling primer](/reference/sterling) for the contracts.
@@ -1143,6 +1143,6 @@ Each step records the token path, the rule that produced it, the inputs, the out
 - **[Color Schemes](/reference/color-schemes)** — the 22-slot scheme model, derivation entry points, and the 84+ bundled schemes.
 - **[Capability Tiers](/reference/capability-tiers)** — how tokens render at truecolor / 256 / ANSI 16 / monochrome, and the four opt-out modes (`NO_COLOR`, `SILVERY_COLOR=mono|plain`, `SILVERY_STRIP_ALL`).
 - **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific semantic tokens and brand colors with proper fallbacks.
-- **[@silvery/schemes reference](/reference/theme)** — full type definitions, derivation rules, built-in palettes.
+- **[@silvery/ansi/schemes reference](/reference/theme)** — full type definitions, derivation rules, built-in palettes.
 - **[@silvery/ansi reference](/reference/style)** — chainable CLI styling API.
 - **[Theme Explorer](/themes)** — browse all 84 color schemes interactively.

@@ -88,6 +88,22 @@ const theme = await detectTheme()
 const theme = deriveTheme(palette)
 ```
 
+### Built-in schemes
+
+`@silvery/ansi/schemes` includes 84 color schemes, pre-derived themes, detection wrappers, builders and Base16 import/export.
+
+```ts
+import { deriveTheme } from "@silvery/ansi"
+import { nord, builtinPalettes, defaultDarkTheme } from "@silvery/ansi/schemes"
+
+const theme = deriveTheme(nord)
+const availableNames = Object.keys(builtinPalettes)
+```
+
+The published entries are `@silvery/ansi` and `@silvery/ansi/schemes`, plus `@silvery/ansi/schemes/detect`, `@silvery/ansi/schemes/schemes` and `@silvery/ansi/schemes/theme`.
+
+Sterling factories, tokens and CSS come from `@silvery/color/design`; React's `ThemeProvider` and `useTheme` come from `silvery`. See the [theme reference](https://silvery.dev/reference/theme) for the catalog and tooling.
+
 ### Extended underlines
 
 ```ts
@@ -126,10 +142,10 @@ nearestAnsi16([255, 0, 0]) // → nearest 16-color index
 ## Relationship to Other Packages
 
 ```
-@silvery/color          ← pure math (hex/RGB/HSL, blending, contrast)
+@silvery/color          ← pure math; /design adds Sterling themes and CSS
   └─ @silvery/ansi      ← THIS: terminal styling + detection + control
-       └─ @silvery/schemes ← palettes, ThemeProvider, useTheme
-            └─ silvery   ← full framework barrel
+       /schemes        ← 84 palettes, detection, builders and import/export
+       └─ silvery      ← framework barrel; React ThemeProvider and useTheme
 ```
 
 ## License

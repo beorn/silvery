@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-06
+
+### Changed
+
+- Sterling factories, theme types, `themeCss` and `THEME_CSS_TOKENS` now live at `@silvery/color/design`. Color remains dependency-free.
+- The 84 color schemes, detection and builders now live at `@silvery/ansi/schemes`, with `/detect`, `/schemes` and `/theme` entries preserved. The two unpublished standalone package names are withdrawn.
+- `silvery/theme` consumes those existing-package subpaths. Theme values, ANSI constructor behavior and paired CSS output are unchanged.
+
 ## [0.28.0] - 2026-11-04
 
 ### Added

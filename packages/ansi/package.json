@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ansi",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Everything terminal — styling, ANSI primitives, color detection, theme derivation, terminal control",
   "keywords": [
     "ansi",
@@ -29,26 +29,39 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schemes": "./src/schemes/index.ts",
+    "./schemes/detect": "./src/schemes/detect.ts",
+    "./schemes/schemes": "./src/schemes/schemes/index.ts",
+    "./schemes/theme": "./src/schemes/theme.ts"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": "./dist/index.mjs"
+      ".": "./dist/index.mjs",
+      "./schemes": "./dist/schemes/index.mjs",
+      "./schemes/detect": "./dist/schemes/detect.mjs",
+      "./schemes/schemes": "./dist/schemes/schemes/index.mjs",
+      "./schemes/theme": "./dist/schemes/theme.mjs"
     }
   },
   "scripts": {
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/color": "0.28.0",
-    "@silvery/design": "0.28.0",
+    "@silvery/color": "0.29.0",
     "string-width": "8.3.0"
   },
   "tsdown": {
     "clean": true,
     "dts": true,
-    "entry": "src/index.ts",
+    "entry": [
+      "src/index.ts",
+      "src/schemes/index.ts",
+      "src/schemes/detect.ts",
+      "src/schemes/schemes/index.ts",
+      "src/schemes/theme.ts"
+    ],
     "exports": {
       "devExports": true,
       "packageJson": false

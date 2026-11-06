@@ -35,7 +35,7 @@
 
 import type { Theme, ColorScheme, AnsiColorName } from "./types.ts"
 import type { MonoAttr } from "./monochrome.ts"
-import { STERLING_FLAT_TOKENS } from "@silvery/design"
+import { STERLING_FLAT_TOKENS } from "@silvery/color/design"
 
 /** A derivation-style token — computed from the scheme + theme at resolution time. */
 export interface DeriveTokenDef {

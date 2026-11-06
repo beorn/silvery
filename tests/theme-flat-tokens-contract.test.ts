@@ -5,7 +5,7 @@
  * Background — user's 31/32-empty-bg-tokens rabbit hole (2026-04-22):
  * On a terminal where `detectTheme` couldn't probe the palette (confidence=0),
  * the returned Theme was missing almost every `bg-*` Sterling flat token.
- * Root cause: Sterling derivation lived in `@silvery/schemes` while `deriveTheme`
+ * Root cause: Sterling derivation lived in `@silvery/ansi/schemes` while `deriveTheme`
  * and detection lived in `@silvery/ansi`. Callers using `@silvery/ansi`
  * directly got a "partial" Theme with no flat tokens — $bg-surface-overlay,
  * $bg-cursor, $bg-accent-hover etc. resolved to undefined → empty cells.
@@ -23,7 +23,7 @@
  */
 
 import { describe, expect, it } from "vitest"
-import { sterling, STERLING_FLAT_TOKENS } from "@silvery/design"
+import { sterling, STERLING_FLAT_TOKENS } from "@silvery/color/design"
 import {
   ansi16DarkTheme,
   ansi16LightTheme,
@@ -31,7 +31,7 @@ import {
   defaultLightTheme,
   builtinThemes,
   getThemeByName,
-} from "@silvery/schemes"
+} from "@silvery/ansi/schemes"
 import {
   defaultDarkScheme,
   defaultLightScheme,
@@ -45,7 +45,7 @@ import {
 import {
   detectScheme as detectSchemeSterling,
   detectTheme as detectThemeSterling,
-} from "@silvery/schemes"
+} from "@silvery/ansi/schemes"
 
 function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, unknown>): void {
   const missing: string[] = []
@@ -120,7 +120,7 @@ describe("contract: Sterling flat tokens populated in shipped themes", () => {
 })
 
 describe("contract: Sterling flat tokens populated through every detection path", () => {
-  it("@silvery/schemes detectTheme (no TTY → pure fallback) returns a fully-populated theme", async () => {
+  it("@silvery/ansi/schemes detectTheme (no TTY → pure fallback) returns a fully-populated theme", async () => {
     // In vitest there's no TTY, so probeColors returns null → detectTheme hits
     // the pure-fallback branch. This is the exact path the user's "31/32 empty"
     // symptom came from — it must produce a Sterling-baked theme.
@@ -131,7 +131,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
     )
   })
 
-  it("@silvery/schemes detectScheme (no TTY → confidence=0 fallback) returns a fully-populated theme", async () => {
+  it("@silvery/ansi/schemes detectScheme (no TTY → confidence=0 fallback) returns a fully-populated theme", async () => {
     const { theme, source, confidence } = await detectSchemeSterling()
     expect(source).toBe("fallback")
     expect(confidence).toBe(0)
@@ -141,7 +141,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
     )
   })
 
-  it("@silvery/schemes detectScheme with explicit override returns a fully-populated theme", async () => {
+  it("@silvery/ansi/schemes detectScheme with explicit override returns a fully-populated theme", async () => {
     const { theme, source } = await detectSchemeSterling({ override: defaultDarkScheme })
     expect(source).toBe("override")
     assertAllFlatTokensPopulated(
@@ -152,7 +152,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
 
   it("silvery runtime (wrap-with-themed-provider) produces a Sterling-baked theme", async () => {
     // Post-unification (Design A, 2026-04-24): both `@silvery/ansi` and
-    // `@silvery/schemes` detection paths return Sterling-baked themes. The
+    // `@silvery/ansi/schemes` detection paths return Sterling-baked themes. The
     // runtime wrapper can import from either; this test just asserts the
     // file exists and compiles (it's covered by the path-agnostic tests above).
     const runtimeSource = await import("node:fs").then((fs) =>
@@ -294,10 +294,10 @@ describe("contract: user's specific 246×122 complaint — explicit bg tokens al
     )
   })
 
-  it("@silvery/schemes detectTheme fallback: all user-reported bg tokens resolve", async () => {
+  it("@silvery/ansi/schemes detectTheme fallback: all user-reported bg tokens resolve", async () => {
     const theme = await detectThemeSterling()
     assertReportedTokensPopulated(
-      "@silvery/schemes detectTheme (fallback)",
+      "@silvery/ansi/schemes detectTheme (fallback)",
       theme as unknown as Record<string, unknown>,
     )
   })

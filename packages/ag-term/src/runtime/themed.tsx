@@ -13,7 +13,7 @@
  * @example
  * ```tsx
  * import { runThemed } from "silvery/runtime"
- * import { builtinPalettes } from "@silvery/schemes/schemes"
+ * import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
  *
  * const handle = await runThemed(<App />, {
  *   catalog: Object.values(builtinPalettes),

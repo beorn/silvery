@@ -4,8 +4,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling } from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+import { sterling } from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 import { hexToOklch } from "@silvery/color"
 import type { ColorScheme } from "@silvery/ansi"
 

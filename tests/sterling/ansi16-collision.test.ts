@@ -17,8 +17,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling } from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+import { sterling } from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 import { pickColorLevel } from "@silvery/ansi"
 import type { Theme } from "@silvery/ansi"
 

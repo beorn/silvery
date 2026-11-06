@@ -1,0 +1,536 @@
+/**
+ * Sterling — silvery's canonical design system.
+ *
+ * This module defines the type-level surface:
+ *   - `Theme` — the output of derivation, an intersection of `FlatTokens & Roles`.
+ *     Double-populated: `theme.accent.bg` and `theme["bg-accent"]` reference the
+ *     SAME string (D4: no Proxy).
+ *   - `DesignSystem` — the contract every design-token system implements.
+ *   - `FlatToken` — string-literal union of all ~50 flat hyphen keys.
+ *   - `ColorScheme` — the input contract in this package.
+ *
+ * Sterling is additive relative to the legacy `Theme` in @silvery/ansi —
+ * consumers keep working through Phase 2c. Nothing here deletes.
+ *
+ * @see `hub/silvery/design/v10-terminal/design-system.md` — canonical spec
+ * @see `hub/silvery/design/v10-terminal/sterling-preflight.md` — D1-D6
+ */
+
+export type { ColorScheme } from "../scheme.ts"
+export type { FlattenRule } from "../flatten.ts"
+
+// ── Role / State / Surface primitives ──────────────────────────────────────
+
+/**
+ * Surface-only state pair: only `bg` varies by state. Used by the status
+ * roles (`info`, `success`, `warning`, `error`) where state variants are
+ * meaningful only for surfaces (filled bg), never for text.
+ *
+ * Text tokens on status roles don't hover — `fg-error` is a status color,
+ * not an interactive link. Keeping `fg.hover` / `fg.active` on those roles
+ * invited algorithmic over-generation that produced illegible results
+ * (e.g. catppuccin-frappe `warning.active.fg` collapsing to `#FFFFFF`).
+ */
+export interface BgStatePair {
+  readonly bg: string
+}
+
+/** On-fill foreground state pair. Used for deemphasis within a filled role. */
+export interface FgOnStatePair {
+  readonly fgOn: string
+}
+
+/**
+ * Interactive (link-like) state pair: both `fg` and `bg` vary by state.
+ * Used by `accent` — the canonical interactive-text role.
+ */
+export interface StatePair {
+  readonly fg: string
+  readonly bg: string
+}
+
+/**
+ * A status role — fg, bg, and `fgOn` (text color to draw when rendering ON
+ * a filled bg of this role). State variants apply to SURFACE (bg) only;
+ * text-color state variants are reserved for link-like roles (`accent`).
+ *
+ * Used for the four status families: `info`, `success`, `warning`, `error`.
+ */
+export interface StatusRole {
+  /** Foreground hex — use for text/icon in this role. */
+  readonly fg: string
+  /** Background hex — use as fill for emphasis. */
+  readonly bg: string
+  /** Foreground to use when drawing ON `bg` (contrast-picked). */
+  readonly fgOn: string
+  /** Hover state — surface only (adaptive ±L shift on bg). */
+  readonly hover: BgStatePair
+  /** Active (pressed) state — surface only (adaptive ±L shift on bg). */
+  readonly active: BgStatePair
+}
+
+/**
+ * @deprecated Renamed to `StatusRole` for clarity (the family lacks the
+ * `fg.hover/active` interaction states the old name implied). The alias is
+ * retained for one cycle so external consumers don't break on rename.
+ */
+export type InteractiveRole = StatusRole
+
+/**
+ * Accent — the canonical link-like interactive-text role. Has everything
+ * `StatusRole` does PLUS a focus-ring border AND `fg.hover` /
+ * `fg.active` text-color state variants (link hover treatments).
+ */
+export interface AccentRole {
+  /** Foreground hex — use for text/icon in accent. */
+  readonly fg: string
+  /** Background hex — use as fill for emphasis. */
+  readonly bg: string
+  /** Foreground to use when drawing ON `bg` (contrast-picked). */
+  readonly fgOn: string
+  /** Border color for focus rings using this accent. */
+  readonly border: string
+  /** Hover state — both fg (link hover) and bg (surface hover). */
+  readonly hover: StatePair
+  /** Active (pressed) state — both fg and bg. */
+  readonly active: StatePair
+}
+
+/** Surface hierarchy — `default` is the canvas, subtle/raised/overlay stack upward. */
+export interface SurfaceRole {
+  readonly default: string
+  readonly subtle: string
+  readonly raised: string
+  readonly overlay: string
+  readonly hover: string
+}
+
+/** Border roles — `focus` is the focus-ring color; `default` is normal rule line. */
+export interface BorderRole {
+  readonly default: string
+  readonly focus: string
+  readonly muted: string
+}
+
+/** Cursor colors. */
+export interface CursorRole {
+  readonly fg: string
+  readonly bg: string
+}
+
+/** Muted role — lower-emphasis text/bg for deemphasized content. */
+export interface MutedRole {
+  readonly fg: string
+  readonly bg: string
+}
+
+/**
+ * Faint role — the deemphasis tier BELOW `muted`. Intentionally-faint text
+ * that should barely register: fine-print unit suffixes, decorative meter
+ * labels, whisper-weight metadata that must not compete with the `muted`
+ * caption beside it. The text analog of `border-muted` (the FAINT 1.5:1
+ * divider tier) — single `fg` slot, no surface/border companions (faint is a
+ * text-only treatment; if a faint fill is ever needed, reach for `bg-muted`).
+ */
+export interface FaintRole {
+  readonly fg: string
+}
+
+/**
+ * Selected role — the highlight surface for the cursor row, mouse selection,
+ * search-match highlight, and any "this is the active item" treatment.
+ * `fgOn` is the text color drawn on `bg`; `hover.bg` is the +0.04L shift used
+ * by SelectList row hover.
+ */
+export interface SelectedRole {
+  readonly bg: string
+  readonly fgOn: string
+  readonly hover: BgStatePair
+}
+
+/**
+ * Inverse role — flipped surface used for status bars, modal chrome, the
+ * "you are here" inverse band. `hover.bg` is the interactive surface state;
+ * `muted.fgOn` is deemphasized text with a 3:1 floor on base and hover
+ * inverse chrome; base `fgOn` remains AA-readable on both surfaces.
+ */
+export interface InverseRole {
+  readonly bg: string
+  readonly fgOn: string
+  readonly hover: BgStatePair
+  readonly muted: FgOnStatePair
+}
+
+/**
+ * Link role — hyperlink text color. Distinct from `accent` so apps that want
+ * "link blue" (as opposed to the brand-derived accent) can opt in. Links are
+ * text, not surfaces, so their hover state varies only the foreground.
+ */
+export interface LinkRole {
+  readonly fg: string
+  readonly hover: { readonly fg: string }
+}
+
+/**
+ * Disabled role — neutral, deemphasized treatment for unavailable controls
+ * (read-only inputs, disabled buttons, inactive menu items). Composite-derived
+ * from the base interface tokens (`fg-default` / `border-default`) over
+ * `bg-surface-default`, NOT from accent/status families — disabled is meant
+ * to read as "absent / inactive", not as a muted error/success/etc.
+ *
+ * Derivation (per design-system.md §"Disabled derivation"):
+ *   - `fg-disabled    = composite(fg-default     @ 0.38, bg-surface-default)`
+ *     clamped to ≥3:1 contrast vs `bg-surface-default`
+ *   - `border-disabled = composite(border-default @ 0.24, bg-surface-default)`
+ *   - `bg-disabled    = composite(border-default @ 0.12, bg-surface-default)`
+ */
+export interface DisabledRole {
+  readonly fg: string
+  readonly bg: string
+  readonly border: string
+}
+
+// ── Roles (the nested form) ────────────────────────────────────────────────
+
+/**
+ * The nested, programmatic form of a Theme. All leaf values are hex strings.
+ * Reached via `theme.accent.bg`, `theme.surface.raised`, etc.
+ */
+export interface Roles {
+  readonly accent: AccentRole
+  readonly info: StatusRole
+  readonly success: StatusRole
+  readonly warning: StatusRole
+  readonly error: StatusRole
+  readonly muted: MutedRole
+  readonly faint: FaintRole
+  readonly surface: SurfaceRole
+  readonly border: BorderRole
+  readonly cursor: CursorRole
+  readonly selected: SelectedRole
+  readonly inverse: InverseRole
+  readonly link: LinkRole
+  readonly disabled: DisabledRole
+}
+
+// ── Flat form (the user-facing string-keyed surface) ───────────────────────
+
+/**
+ * Every flat hyphen-key that Sterling emits. String-literal union so that
+ * `theme["bg-accent"]` is type-checked and typos fail the compile.
+ *
+ * Grammar: `prefix-role[-state]` or `prefix-on-role[-state]` or
+ * `prefix-role-kind[-state]`.
+ * (See design-system.md §"Flattening rule".)
+ */
+export type FlatToken =
+  // Surface
+  | "bg-surface-default"
+  | "bg-surface-subtle"
+  | "bg-surface-raised"
+  | "bg-surface-overlay"
+  | "bg-surface-hover"
+  // Border
+  | "border-default"
+  | "border-focus"
+  | "border-muted"
+  // Cursor
+  | "fg-cursor"
+  | "bg-cursor"
+  // Muted (status-text — no state variants)
+  | "fg-muted"
+  | "bg-muted"
+  // Faint — the deemphasis tier below muted (intentionally-faint fine-print
+  // text; the text analog of border-muted's FAINT tier). Text-only, no bg.
+  | "fg-faint"
+  // Accent — link-like interactive text, keeps fg.hover + fg.active
+  | "fg-accent"
+  | "bg-accent"
+  | "fg-on-accent"
+  | "fg-accent-hover"
+  | "bg-accent-hover"
+  | "fg-accent-active"
+  | "bg-accent-active"
+  | "border-accent"
+  // Info — status role; bg-state only (text doesn't hover)
+  | "fg-info"
+  | "bg-info"
+  | "fg-on-info"
+  | "bg-info-hover"
+  | "bg-info-active"
+  // Success — status role; bg-state only
+  | "fg-success"
+  | "bg-success"
+  | "fg-on-success"
+  | "bg-success-hover"
+  | "bg-success-active"
+  // Warning — status role; bg-state only
+  | "fg-warning"
+  | "bg-warning"
+  | "fg-on-warning"
+  | "bg-warning-hover"
+  | "bg-warning-active"
+  // Error — status role; bg-state only
+  | "fg-error"
+  | "bg-error"
+  | "fg-on-error"
+  | "bg-error-hover"
+  | "bg-error-active"
+  // Selected — highlight surface for cursor / mouse-selection / search-match
+  | "bg-selected"
+  | "fg-on-selected"
+  | "bg-selected-hover"
+  // Inverse — flipped surface (status bar, modal chrome)
+  | "bg-inverse"
+  | "fg-on-inverse"
+  | "bg-inverse-hover"
+  | "fg-on-inverse-muted"
+  // Link — hyperlink text color + hover foreground
+  | "fg-link"
+  | "fg-link-hover"
+  // Disabled — neutral deemphasis for unavailable controls
+  | "fg-disabled"
+  | "bg-disabled"
+  | "border-disabled"
+  // Backdrop — modal scrim (the dimming layer behind a modal/dialog).
+  // Distinct from `bg-surface-overlay` (the popover/tooltip CARD bg).
+  | "bg-backdrop"
+  // Default surfaces — explicit public tokens for the unstyled canvas.
+  // Same values as `theme.fg` / `theme.bg` / `bg-surface-default`, exposed
+  // as flat tokens so consumers can write `$fg-default` / `$bg-default`
+  // without reaching for `theme.fg` directly.
+  | "fg-default"
+  | "bg-default"
+
+/** The flat projection — every FlatToken maps to a hex string. */
+export type FlatTokens = {
+  readonly [K in FlatToken]: string
+}
+
+// ── Derivation trace (opt-in) ──────────────────────────────────────────────
+
+/**
+ * Per-token record of HOW a token was derived. Populated only when the
+ * derivation is called with `{ trace: true }`. Used by the Sterling
+ * storybook to visualize derivation rules.
+ */
+export interface DerivationStep {
+  /** Token path (e.g. `"accent.hover.bg"` or flat `"bg-accent-hover"`). */
+  readonly token: string
+  /** Human-readable rule name (e.g. `"OKLCH +0.04L on accent.bg"`). */
+  readonly rule: string
+  /** Input hex(es) the rule operated on. */
+  readonly inputs: readonly string[]
+  /** Output hex. */
+  readonly output: string
+  /** If auto-lift adjusted this token, the original value before adjustment. */
+  readonly liftedFrom?: string
+  /** If pinned by scheme author, true. */
+  readonly pinned?: boolean
+}
+
+export type DerivationTrace = readonly DerivationStep[]
+
+// ── Convenience (non-token) metadata ──────────────────────────────────────
+
+/**
+ * Categorical color ring — 8 harmonious hues for tagging, chart series,
+ * calendar categories, priority levels — any CATEGORICAL color that isn't
+ * stateful. ensureContrast-adjusted against bg at derivation time. Consumers
+ * access these via `$red`, `$orange`, …, `$pink` or direct field access.
+ *
+ * Distinguish from:
+ *   - `$color0..$color15`         — raw terminal ANSI (user's theme verbatim)
+ *   - `$error/$warning/$success`  — semantic state (communicates meaning)
+ *   - `$brand`                    — app identity anchor (one color)
+ */
+export interface CategoricalHues {
+  readonly red: string
+  readonly orange: string
+  readonly yellow: string
+  readonly green: string
+  readonly teal: string
+  readonly blue: string
+  readonly purple: string
+  readonly pink: string
+}
+
+// ── The Theme ──────────────────────────────────────────────────────────────
+
+/**
+ * The canonical Sterling Theme — Sterling flat tokens + nested roles on the
+ * same object, plus a small surface of non-token metadata and runtime
+ * convenience fields the framework depends on:
+ *
+ * Two access paths for every hex leaf:
+ *   - Nested:  `theme.accent.hover.bg`
+ *   - Flat:    `theme["bg-accent-hover"]`
+ *   Both paths reference the same string (not copies). The object is frozen
+ *   after derivation (see `flatten.ts`).
+ *
+ * Non-token metadata:
+ *   - `name` — scheme display name (if derived from a named scheme)
+ *   - `mode` — light/dark
+ *   - `derivationTrace` — optional; present only when `{ trace: true }` was passed
+ *   - `variants` — typography preset bundles (h1, body, code, …) resolved by
+ *     `<Text variant="…">`
+ *   - `palette` — 16-slot ANSI catalog used by `$color0` … `$color15`
+ *   - categorical hues (`red`, `orange`, `yellow`, `green`, `teal`, `blue`,
+ *     `purple`, `pink`) — hex strings for categorical UI
+ *
+ * Root pair:
+ *   - `fg` — default text color (= `scheme.foreground`)
+ *   - `bg` — default canvas color (= `scheme.background`; same value as
+ *            `bg-surface-default` but exposed at the root for `$fg` / `$bg`
+ *            JSX consumers and convenience access)
+ *
+ * The nested roles (`accent`, `muted`, `surface`, `border`, `cursor`, plus
+ * the status roles `info`/`success`/`warning`/`error`) are authoritative for
+ * stateful tokens. Legacy flat hex aliases for these roles (`theme.primary`,
+ * `theme.muted`, `theme.accent` as strings) are emitted as runtime
+ * conveniences via the scheme-builder but are not part of this type — they
+ * were deleted in silvery 0.19.0.
+ */
+export type Theme = FlatTokens &
+  Roles & {
+    readonly name?: string
+    readonly mode: "light" | "dark"
+    readonly derivationTrace?: DerivationTrace
+    readonly variants: Record<string, Variant>
+    readonly palette: readonly string[]
+    /** Default text color (= `scheme.foreground`). Heavily used as `$fg` in JSX. */
+    readonly fg: string
+    /**
+     * Default canvas color (= `scheme.background`). Same value as
+     * `bg-surface-default`; exposed at the root for `$bg` JSX consumers and
+     * convenience access.
+     */
+    readonly bg: string
+  } & CategoricalHues
+
+/**
+ * A typography variant — a named bundle of visual properties applied to a
+ * Text component via `variant="h1"`. The variant acts as a *default*: caller
+ * props always win over variant values.
+ *
+ * Color values follow the same syntax as `TextColor` — `$token` strings, hex
+ * values, ANSI names, or any string accepted by the color system.
+ */
+export interface Variant {
+  readonly color?: string
+  readonly backgroundColor?: string
+  readonly bold?: boolean
+  readonly italic?: boolean
+  readonly dim?: boolean
+  readonly underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
+}
+
+// ── ThemeShape metadata ────────────────────────────────────────────────────
+
+/**
+ * Metadata describing a DesignSystem's Theme shape — for tooling (docs,
+ * storybook, CSS export). Plain data, no functions.
+ */
+export interface ThemeShape {
+  /** The list of FlatTokens this system emits. */
+  readonly flatTokens: readonly string[]
+  /** The list of role-object keys this system emits (e.g. `["accent", "info", ...]`). */
+  readonly roles: readonly string[]
+  /** The list of state variants used on interactive roles (e.g. `["hover", "active"]`). */
+  readonly states: readonly string[]
+}
+
+// ── DesignSystem contract ──────────────────────────────────────────────────
+
+import type { ColorScheme } from "../scheme.ts"
+import type { FlattenRule } from "../flatten.ts"
+
+/** Contrast enforcement mode for derivation. See D3 in sterling-preflight.md. */
+export type ContrastMode =
+  /** Throw on WCAG AA failure on core role pairs. Used by catalog tests. */
+  | "strict"
+  /** Auto-lift failing tokens via OKLCH L shifts. Used for user schemes. */
+  | "auto-lift"
+
+/** Options accepted by all derivation entry points. */
+export interface DeriveOptions {
+  /** Default: `"auto-lift"`. */
+  readonly contrast?: ContrastMode
+  /** If true, attach `derivationTrace` to the returned Theme. Default: false. */
+  readonly trace?: boolean
+  /**
+   * Per-role token pins. A scheme author can pin specific tokens (e.g.
+   * `{ "error.fg": "#bf616a" }`) to skip auto-adjustment. The path syntax is
+   * nested-style: `"accent.hover.bg"`, `"error.fg"`. Flat-form pins are
+   * also accepted: `{ "bg-accent": "#...", "fg-on-error": "#..." }`.
+   */
+  readonly pins?: Readonly<Record<string, string>>
+  /**
+   * Force light/dark inference. By default inferred from
+   * `scheme.dark` or WCAG luminance of `scheme.background`.
+   */
+  readonly mode?: "light" | "dark"
+}
+
+/**
+ * The `DesignSystem` contract. Sterling is the default implementation; other
+ * packages (e.g. `@silvery/color/design-material`) publish alternatives matching
+ * this shape.
+ */
+export interface DesignSystem {
+  /** Display name for tooling (e.g. `"sterling"`). */
+  readonly name: string
+
+  /** Metadata about this system's Theme shape. */
+  readonly shape: ThemeShape
+
+  /**
+   * Whether the framework should auto-apply `bakeFlat` to each derivation's
+   * output — projecting hex leaves onto flat hyphen-keys on the same object.
+   *
+   * - `true` — use {@link defaultFlattenRule} (channel-role-state, Sterling style)
+   * - `FlattenRule` — system-specific rule (e.g. Material `onPrimary`)
+   * - `false` or omitted — no auto-flatten (system is responsible, or
+   *   consumer only uses nested form)
+   *
+   * Sterling and anything modelled on it should set `flatten: true` —
+   * flat-projection-on-same-object is a universal feature of nested
+   * hex-leaf POJOs and Sterling users expect `theme["bg-accent"]` access.
+   */
+  readonly flatten?: boolean | FlattenRule
+
+  /** Return a raw default Theme, no input required. */
+  defaults(mode?: "light" | "dark"): Theme
+
+  /**
+   * Fill partial theme values with defaults. Useful for hand-curated themes
+   * that override a few roles.
+   */
+  theme(partial?: DeepPartial<Theme>, opts?: DeriveOptions): Theme
+
+  /** Derive from a 22-color terminal scheme — Sterling's primary path. */
+  deriveFromScheme(scheme: ColorScheme, opts?: DeriveOptions): Theme
+
+  /** Derive from a single seed color — Material-style. */
+  deriveFromColor(color: string, opts?: DeriveOptions & { mode?: "light" | "dark" }): Theme
+
+  /** Derive from a light/dark scheme pair. */
+  deriveFromPair(
+    light: ColorScheme,
+    dark: ColorScheme,
+    opts?: DeriveOptions,
+  ): {
+    light: Theme
+    dark: Theme
+  }
+
+  /** Derive from a scheme plus a brand-color overlay (F — brand discipline). */
+  deriveFromSchemeWithBrand(scheme: ColorScheme, brand: string, opts?: DeriveOptions): Theme
+}
+
+/** Utility: recursive `Partial` for nested Theme overrides. */
+export type DeepPartial<T> = T extends object
+  ? T extends readonly unknown[]
+    ? T
+    : { [K in keyof T]?: DeepPartial<T[K]> }
+  : T

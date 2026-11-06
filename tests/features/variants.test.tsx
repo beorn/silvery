@@ -24,7 +24,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Text, H1, H2, H4, H5, H6, Box } from "silvery"
 import { ThemeProvider } from "silvery"
-import { defaultDarkTheme } from "@silvery/schemes/schemes"
+import { defaultDarkTheme } from "@silvery/ansi/schemes/schemes"
 import { KNOWN_VARIANTS } from "@silvery/ansi"
 
 const r = createRenderer({ cols: 80, rows: 5 })

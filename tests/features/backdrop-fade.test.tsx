@@ -29,7 +29,7 @@ import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Backdrop, Box, Text, ModalDialog, ThemeProvider } from "@silvery/ag-react"
 import { deriveTheme } from "@silvery/ansi"
-import { catppuccinMocha } from "@silvery/schemes/schemes"
+import { catppuccinMocha } from "@silvery/ansi/schemes/schemes"
 
 // A dark theme with known bg — catppuccin mocha bg is #1e1e2e (luminance ≈ 0.012).
 // With defaultBg="#1e1e2e", deriveScrimColor returns "#000000" (dark scrim).

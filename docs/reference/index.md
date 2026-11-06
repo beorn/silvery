@@ -14,7 +14,7 @@ Comprehensive reference documentation for Silvery's APIs, packages, and terminal
 - [Packages](/reference/packages) -- All public and internal packages
 - [@silvery/ansi](/reference/ansi) -- Terminal styling, color detection, theme derivation
 - [@silvery/commander](/reference/commander) -- Type-safe CLI with colorized help
-- [@silvery/schemes](/reference/theme) -- Theme tokens, palettes, and derivation pipeline
+- [@silvery/ansi/schemes](/reference/theme) -- Theme tokens, palettes, and derivation pipeline
 
 ## Styling & Theming
 

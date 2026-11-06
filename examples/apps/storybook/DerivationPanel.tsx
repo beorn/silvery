@@ -24,7 +24,7 @@ import { Box, Text, Muted, Divider, Strong, Small } from "silvery"
 import type {
   Theme as SterlingTheme,
   DerivationStep as SterlingDerivationStep,
-} from "@silvery/design"
+} from "@silvery/color/design"
 import { quantizeHex, type ColorLevel } from "@silvery/ansi"
 import { hexToOklch, checkContrast, type OKLCH } from "@silvery/color"
 

@@ -15,7 +15,7 @@
  */
 
 import type { ColorScheme, Theme } from "./types.ts"
-import { COLOR_SCHEME_FIELDS } from "@silvery/design"
+import { COLOR_SCHEME_FIELDS } from "@silvery/color/design"
 import { loadTheme } from "./derive.ts"
 import {
   probeAnswered,
@@ -107,7 +107,7 @@ function envOverride(): "truecolor" | "256" | "ansi16" | "scheme" | "mono" | "au
  * @example
  * ```ts
  * import { detectScheme } from "@silvery/ansi"
- * import { builtinPalettes } from "@silvery/schemes/schemes"
+ * import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
  *
  * const { scheme, theme, source, matchedName, confidence } = await detectScheme({
  *   catalog: Object.values(builtinPalettes),

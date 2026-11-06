@@ -1,3 +1,3 @@
 // silvery/theme — design tokens and terminal color schemes.
-export * from "@silvery/design"
-export * from "@silvery/schemes"
+export * from "@silvery/color/design"
+export * from "@silvery/ansi/schemes"

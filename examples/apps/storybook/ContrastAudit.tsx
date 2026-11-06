@@ -18,7 +18,7 @@
 
 import React, { useMemo } from "react"
 import { Box, Text, Muted, Divider, Strong, Small } from "silvery"
-import type { Theme as SterlingTheme } from "@silvery/design"
+import type { Theme as SterlingTheme } from "@silvery/color/design"
 import { checkContrast } from "@silvery/color"
 
 interface PairSpec {

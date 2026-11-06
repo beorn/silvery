@@ -36,7 +36,7 @@ import {
 } from "@silvery/ag-term/runtime/renderer"
 import { composeSelectionCells } from "@silvery/ag-term/selection-renderer"
 import { createBuffer } from "@silvery/ag-term/runtime/create-buffer"
-import { defaultDarkTheme } from "@silvery/schemes/schemes"
+import { defaultDarkTheme } from "@silvery/ansi/schemes/schemes"
 import type { Theme } from "@silvery/ansi"
 import type { TerminalSelectionState } from "@silvery/headless/selection"
 

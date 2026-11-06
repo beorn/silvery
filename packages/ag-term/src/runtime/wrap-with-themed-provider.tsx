@@ -32,7 +32,11 @@ import type { ColorScheme } from "@silvery/ansi"
 // was the source of the "31/32 bg tokens empty" symptom — the returned Theme
 // had no flat tokens, so every `$bg-*` token resolved to undefined → empty
 // string paint. See tests/theme-flat-tokens-contract.test.ts.
-import { detectScheme, type DetectSchemeOptions, type DetectSchemeResult } from "@silvery/schemes"
+import {
+  detectScheme,
+  type DetectSchemeOptions,
+  type DetectSchemeResult,
+} from "@silvery/ansi/schemes"
 import { ThemeProvider, type ThemeTokens } from "@silvery/ag-react"
 import type { ActiveScheme } from "@silvery/ansi"
 import { createInputOwner } from "./input-owner"

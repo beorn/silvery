@@ -8,7 +8,7 @@
  * Pipeline: Scheme catalog → ColorScheme (22) → deriveTheme() → Theme (33)
  */
 
-export type { ColorScheme } from "@silvery/design"
+export type { ColorScheme } from "@silvery/color/design"
 
 export type AnsiColorName =
   | "black"
@@ -43,7 +43,7 @@ export type AnsiColorName =
  * `deriveTheme` paths during the 0.19.x window for consumers that haven't
  * migrated; they will be removed in 0.20.0.
  */
-export type { Theme } from "@silvery/design"
+export type { Theme } from "@silvery/color/design"
 
 /**
  * Metadata describing how the active color scheme was determined.

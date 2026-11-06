@@ -168,7 +168,7 @@ Link        fg-link | fg-link-hover
 ### Type Definition
 
 ```typescript
-import type { Theme } from "@silvery/schemes"
+import type { Theme } from "@silvery/color/design"
 
 // Type-level: Theme = SterlingTheme = FlatTokens & Roles & { ...metadata } & CategoricalHues
 //
@@ -176,14 +176,14 @@ import type { Theme } from "@silvery/schemes"
 // AND flat hyphen-keys reference the same string on the same object.
 ```
 
-See [`Theme`](/reference/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/design/src/sterling/types.ts` for the source of truth.
+See [`Theme`](/reference/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/color/src/design/sterling/types.ts` for the source of truth.
 
 ## Sterling DesignSystem
 
-Sterling is exposed as the canonical `DesignSystem` value. All theme construction goes through it.
+Sterling is the canonical `DesignSystem` value, exported by `@silvery/color/design`. ANSI constructors also produce the same `Theme` shape.
 
 ```typescript
-import { sterling } from "@silvery/schemes"
+import { sterling } from "@silvery/color/design"
 
 // Five derivation entry points
 sterling.deriveFromScheme(scheme, opts?)              // 22-color scheme → Theme
@@ -320,7 +320,7 @@ resolveToken("red", theme) // pass-through (named CSS color)
 
 ## Built-in Schemes
 
-`@silvery/schemes` ships 84 color schemes covering popular terminal and editor color schemes.
+`@silvery/ansi/schemes` ships 84 color schemes covering popular terminal and editor color schemes.
 
 ### Scheme Families
 
@@ -395,12 +395,12 @@ const catppuccin = getThemeByName("catppuccin-mocha")
 
 ## Color Utilities
 
-Low-level color manipulation, available from `@silvery/color` (re-exported by `@silvery/schemes` and `silvery/theme`).
+Low-level color manipulation is available from `@silvery/color`.
 
 ### Blending and Manipulation
 
 ```typescript
-import { blend, brighten, darken, desaturate, complement } from "silvery/theme"
+import { blend, brighten, darken, desaturate, complement } from "@silvery/color"
 
 blend("#2E3440", "#ECEFF4", 0.5) // OKLCH midpoint
 brighten("#2E3440", 0.1) // 10% lighter
@@ -414,7 +414,7 @@ complement("#EBCB8B") // 180-degree hue rotation
 ### Contrast
 
 ```typescript
-import { contrastFg, checkContrast, ensureContrast } from "silvery/theme"
+import { contrastFg, checkContrast, ensureContrast } from "@silvery/color"
 
 contrastFg("#2E3440") // "#FFFFFF"
 contrastFg("#ECEFF4") // "#000000"
@@ -427,7 +427,7 @@ ensureContrast("#FFAB91", "#FFFFFF", 4.5) // "#B35600" (darkened to meet AA)
 ### Conversion
 
 ```typescript
-import { hexToRgb, rgbToHex, hexToHsl, hslToHex, rgbToHsl } from "silvery/theme"
+import { hexToRgb, rgbToHex, hexToHsl, hslToHex, rgbToHsl } from "@silvery/color"
 
 hexToRgb("#BF616A") // [191, 97, 106]
 rgbToHex(191, 97, 106) // "#BF616A"
@@ -468,7 +468,7 @@ Wraps the app (or a subtree) to enable `$token` resolution:
 Read the current theme from any component:
 
 ```tsx
-import { useTheme } from "silvery/theme"
+import { useTheme } from "silvery"
 
 function StatusLine() {
   const theme = useTheme()
