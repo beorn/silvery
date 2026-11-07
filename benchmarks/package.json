@@ -11,6 +11,6 @@
   "dependencies": {
     "ink": "7.0.0",
     "react": "^19.0.0",
-    "vitest": "5.0.4"
+    "vitest": "5.1.0"
   }
 }
