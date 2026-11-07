@@ -1,7 +1,7 @@
 /**
  * @failure Page colors omit tokens, fail to follow color mode, or silently emit missing values.
  * @level l0
- * @consumer @silvery/color/design themeCss users, including hh-persona pages
+ * @consumer @silvery/color/design themeCss users, including Hallo pages
  * @testonly none
  */
 import { describe, expect, it } from "vitest"
