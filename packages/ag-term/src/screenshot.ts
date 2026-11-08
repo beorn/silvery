@@ -34,7 +34,38 @@ export function createScreenshotter(): Screenshotter {
     const p = await ensureBrowser()
     await p.setContent(html, { waitUntil: "load" })
     await p.waitForTimeout(50)
-    const buffer = (await p.screenshot({ fullPage: true })) as Buffer
+    // Capture the document's own box, not the browser's default viewport: with
+    // `fullPage` a body narrower than the viewport (1280px here) is padded out to
+    // the viewport, so buffer columns stop mapping to pixels — a 72-column frame
+    // came out 1280 wide with the content in the left third. `bufferToHTML`
+    // declares that box; any other HTML is sized by its own body.
+    const body = p.locator("body")
+    const measureBody = async () => {
+      const rect = await body.boundingBox()
+      if (!rect) throw new Error("screenshot: the document has no laid-out body to capture")
+      return {
+        x: Math.floor(rect.x),
+        y: Math.floor(rect.y),
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height),
+      }
+    }
+    const box = await measureBody()
+    if (box.width <= 0 || box.height <= 0) {
+      throw new Error(
+        `screenshot: document body measured ${box.width}x${box.height}px, nothing to capture`,
+      )
+    }
+    // A clip stays bounded by the viewport, so size the viewport to the box first.
+    // A body that reflows larger at its own width falls back to fullPage, which
+    // captures past the viewport instead of cropping.
+    await p.setViewportSize({ width: box.width, height: box.height })
+    const reflowed = await measureBody()
+    const buffer = (await p.screenshot(
+      reflowed.width > box.width || reflowed.height > box.height
+        ? { fullPage: true }
+        : { clip: box },
+    )) as Buffer
     if (outputPath) {
       await writeFile(outputPath, buffer)
     }
