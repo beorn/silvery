@@ -5,7 +5,11 @@ import { writeFile } from "node:fs/promises"
 // ============================================================================
 
 export interface Screenshotter {
-  /** Render HTML to PNG. First call starts Playwright (~3-5s), subsequent calls ~200ms */
+  /**
+   * Render HTML to PNG. First call starts Playwright (~3-5s), subsequent calls ~200ms.
+   * The capture is the document body's own box: `bufferToHTML` declares the grid's, so
+   * one frame is one cell box per column and row, never the browser's viewport.
+   */
   capture(html: string, outputPath?: string): Promise<Buffer>
   /** Close browser */
   close(): Promise<void>
@@ -64,7 +68,13 @@ export function createScreenshotter(): Screenshotter {
     const buffer = (await p.screenshot(
       reflowed.width > box.width || reflowed.height > box.height
         ? { fullPage: true }
-        : { clip: box },
+        : {
+            clip: {
+              ...box,
+              width: Math.min(box.width, reflowed.width),
+              height: Math.min(box.height, reflowed.height),
+            },
+          },
     )) as Buffer
     if (outputPath) {
       await writeFile(outputPath, buffer)
