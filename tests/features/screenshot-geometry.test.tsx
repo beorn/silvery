@@ -66,7 +66,9 @@ describe("screenshot geometry", () => {
             const divs = Array.from(body.children) as HTMLElement[]
             const tops = divs.map((div) => div.getBoundingClientRect().top)
             const target = divs[2]
-            const text = target.firstChild as Text
+            if (!target) throw new Error("row 2 is missing from the captured document")
+            const text = target.firstChild
+            if (!(text instanceof Text)) throw new Error("row 2 carries no text node")
             const range = document.createRange()
             range.setStart(text, cols - 1)
             range.setEnd(text, cols)
