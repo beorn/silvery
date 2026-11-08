@@ -13,6 +13,7 @@ import { describe, expect, test } from "vitest"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { chromium } from "playwright"
 import { TerminalBuffer, bufferToHTML } from "@silvery/ag-term/buffer"
 import { createScreenshotter } from "@silvery/ag-term/screenshot"
 
@@ -41,6 +42,67 @@ function pngSize(png: Buffer): { width: number; height: number } {
 }
 
 describe("screenshot geometry", () => {
+  test.skipIf(!declaredBrowserEnv)(
+    "each row occupies its own cell row and the last column inks at the right edge",
+    async () => {
+      // A box of the right size can still hold text at the wrong pitch: `white-space:
+      // pre` on the body turned the separator between row divs into an empty line, so
+      // every row sat two cell rows lower and the lower half of the grid clipped away.
+      // This measures the laid-out rows and a known column, not the outer box.
+      const cols = 40
+      const rows = 8
+      const buffer = new TerminalBuffer(cols, rows)
+      buffer.fill(0, 0, cols, rows, { char: " " })
+      for (let x = 0; x < cols; x++) buffer.setCell(x, 2, { char: x === cols - 1 ? "Z" : "." })
+
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(bufferToHTML(buffer), { waitUntil: "load" })
+        const measured = await page.evaluate(
+          ({ cols, rows, cellHeight }) => {
+            const body = document.body
+            const advance = body.getBoundingClientRect().width / cols
+            const divs = [...body.children] as HTMLElement[]
+            const tops = divs.map((div) => div.getBoundingClientRect().top)
+            const target = divs[2]
+            const text = target.firstChild as Text
+            const range = document.createRange()
+            range.setStart(text, cols - 1)
+            range.setEnd(text, cols)
+            const lastColumn = range.getBoundingClientRect()
+            return {
+              advance,
+              tops,
+              rowCount: divs.length,
+              rowsExpected: rows,
+              cellHeight,
+              lastColumnX: lastColumn.x,
+              bodyWidth: body.getBoundingClientRect().width,
+            }
+          },
+          { cols, rows, cellHeight: CELL_HEIGHT },
+        )
+
+        expect(measured.rowCount, "every buffer row must be its own element").toBe(rows)
+        measured.tops.forEach((top, row) => {
+          expect(top, `row ${row} must start at its own cell row`).toBeCloseTo(row * CELL_HEIGHT, 0)
+        })
+        expect(measured.bodyWidth, "the grid must be exactly cols x advance wide").toBeCloseTo(
+          cols * measured.advance,
+          1,
+        )
+        expect(
+          measured.lastColumnX,
+          `the last column must ink at ${((cols - 1) * measured.advance).toFixed(1)}px, one cell left of the ${measured.bodyWidth}px edge`,
+        ).toBeCloseTo((cols - 1) * measured.advance, 0)
+      } finally {
+        await browser.close()
+      }
+    },
+    120_000,
+  )
+
   test.skipIf(!declaredBrowserEnv)(
     "the capture is the size of the grid, not of the browser viewport",
     async () => {

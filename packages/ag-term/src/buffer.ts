@@ -2203,12 +2203,14 @@ export function bufferToHTML(
     htmlLines.push(`<div style="height:${cellHeight}px">${lineHTML}</div>`)
   }
 
+  // Rows are block boxes and the body is `white-space:pre`, so ANY whitespace between
+  // them - including the newline after <body> - renders as an empty cell row: every
+  // row then sits a row lower than its own, the pitch doubles, and the lower half of
+  // the grid clips away. The rows therefore touch the tags directly.
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:${defaultBg};color:${defaultFg};font-family:${fontFamily};font-size:${fontSize}px;line-height:${cellHeight}px;white-space:pre;overflow:hidden;width:${buffer.width}ch;height:${buffer.height * cellHeight}px">
-${htmlLines.join("\n")}
-</body>
+<body style="margin:0;padding:0;background:${defaultBg};color:${defaultFg};font-family:${fontFamily};font-size:${fontSize}px;line-height:${cellHeight}px;white-space:pre;overflow:hidden;width:${buffer.width}ch;height:${buffer.height * cellHeight}px">${htmlLines.join("")}</body>
 </html>`
 }
 
