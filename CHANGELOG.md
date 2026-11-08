@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.29.1] - 2026-11-07
+
+### Fixed
+
+- Commander now requires Zod `^4.6.0`, the lowest stable release compatible with its emitted declarations. Earlier peer ranges admitted installations that failed public declaration checks. Runtime behavior and the existing Commander interface declaration limitation are unchanged.
+
 ## [0.29.0] - 2026-11-06
 
 ### Changed

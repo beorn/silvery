@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ansi",
-  "version": "0.29.0",
+  "version": "0.29.1",
   "description": "Everything terminal — styling, ANSI primitives, color detection, theme derivation, terminal control",
   "keywords": [
     "ansi",
@@ -49,7 +49,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/color": "0.29.0",
+    "@silvery/color": "0.29.1",
     "string-width": "8.3.0"
   },
   "tsdown": {

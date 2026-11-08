@@ -38,7 +38,7 @@
   "dependencies": {
     "@silvery/ag": "0.29.0",
     "@silvery/ag-term": "0.29.0",
-    "@silvery/ansi": "0.29.0",
+    "@silvery/ansi": "0.29.1",
     "@termless/core": ">=0.9.1 <1.0.0",
     "@termless/ghostty": ">=0.9.1 <1.0.0",
     "@termless/ghostty-native": ">=0.9.1 <1.0.0",

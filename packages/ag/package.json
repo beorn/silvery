@@ -78,8 +78,8 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ansi": "0.29.0",
-    "@silvery/signals": "0.29.0",
+    "@silvery/ansi": "0.29.1",
+    "@silvery/signals": "0.29.1",
     "loggily": "0.13.0"
   },
   "tsdown": {
