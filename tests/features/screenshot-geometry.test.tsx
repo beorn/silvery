@@ -63,7 +63,7 @@ describe("screenshot geometry", () => {
           ({ cols, rows, cellHeight }) => {
             const body = document.body
             const advance = body.getBoundingClientRect().width / cols
-            const divs = [...body.children] as HTMLElement[]
+            const divs = Array.from(body.children) as HTMLElement[]
             const tops = divs.map((div) => div.getBoundingClientRect().top)
             const target = divs[2]
             const text = target.firstChild as Text
