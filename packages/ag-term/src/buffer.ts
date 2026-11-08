@@ -2131,6 +2131,13 @@ export function bufferToHTML(
   const defaultFg = theme === "dark" ? "#d4d4d4" : "#1e1e1e"
   const defaultBg = theme === "dark" ? "#1e1e1e" : "#ffffff"
 
+  // A cell is a whole number of pixel rows: a fractional row height drifts every
+  // glyph below the first off the raster grid and makes the captured height depend
+  // on sub-pixel rounding. Width is declared in `ch` so the box follows whatever
+  // monospace font actually resolves; the explicit width/height box is what
+  // screenshot.ts sizes its capture to (see capture() there).
+  const cellHeight = Math.round(fontSize * 1.2)
+
   const htmlLines: string[] = []
 
   for (let y = 0; y < buffer.height; y++) {
@@ -2193,13 +2200,13 @@ export function bufferToHTML(
       currentHyperlink = undefined
     }
 
-    htmlLines.push(`<div>${lineHTML}</div>`)
+    htmlLines.push(`<div style="height:${cellHeight}px">${lineHTML}</div>`)
   }
 
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:${defaultBg};color:${defaultFg};font-family:${fontFamily};font-size:${fontSize}px;line-height:1.2;white-space:pre">
+<body style="margin:0;padding:0;background:${defaultBg};color:${defaultFg};font-family:${fontFamily};font-size:${fontSize}px;line-height:${cellHeight}px;white-space:pre;overflow:hidden;width:${buffer.width}ch;height:${buffer.height * cellHeight}px">
 ${htmlLines.join("\n")}
 </body>
 </html>`
