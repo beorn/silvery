@@ -517,15 +517,20 @@ describe("standalone Backdrop: defaultBg from ThemeProvider", () => {
     expect(bg).not.toEqual({ r: 0, g: 77, b: 77 })
   })
 
-  test("Backdrop without ThemeProvider uses the legacy two-channel path (fg→bg, bg→polarity target)", () => {
+  test("Backdrop without ThemeProvider uses the legacy two-channel path (fg and bg → scene target)", () => {
     // Without ThemeProvider, findRootThemeBg returns null → scrim = null →
-    // legacy path. It is two-channel:
-    //   cell.fg = mixSrgb(fg, cell.bg, amount)          // fg recedes toward its bg
-    //   cell.bg = mixSrgb(bg, polarityTarget, amount)   // bg darkens/lightens
-    // The polarity target is per-cell: red #ff0000 (luminance ≈0.21 < the
-    // 0.5 surface midpoint) recedes toward #000000. This is the @km 19665
-    // fix — opaque bg blocks must recede under the backdrop even with no
-    // theme prop, instead of staying full-brightness ("popping").
+    // legacy path. It is two-channel, and BOTH channels composite toward the
+    // same scene target (the scrim surrogate):
+    //   cell.fg = mixSrgb(fg, sceneTarget, amount)
+    //   cell.bg = mixSrgb(bg, sceneTarget, amount)
+    // The target is per-cell only when the region yields no sample: red
+    // #ff0000 (luminance ≈0.21 < the 0.5 surface midpoint) recedes toward
+    // #000000. This is the @km 19665 fix — opaque bg blocks must recede under
+    // the backdrop even with no theme prop, instead of staying
+    // full-brightness ("popping"). @km 19684 tightened it: fg recedes toward
+    // the scene target TOO, not toward the cell's own bg — that was an
+    // identity for a block glyph whose fg === bg, leaving scrollbar thumbs
+    // bright under the modal scrim.
     const render = createRenderer({ cols: 20, rows: 5 })
 
     function App() {
@@ -547,13 +552,14 @@ describe("standalone Backdrop: defaultBg from ThemeProvider", () => {
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("H")
 
-    // fg is mixed toward the ORIGINAL cell.bg (#ff0000) at α=0.7 in sRGB:
-    //   (255, 255, 255) * 0.3 + (255, 0, 0) * 0.7 = (255, 77, 77)
-    // (unchanged from the historical legacy behavior — fg targets the bg as
-    // it was BEFORE darkening).
+    // fg composites toward the SCENE TARGET (#000000) at α=0.7 in sRGB:
+    //   (255, 255, 255) * 0.3 + (0, 0, 0) * 0.7 = (77, 77, 77)
+    // The historical legacy behavior mixed fg toward the cell's own bg
+    // instead — (255, 77, 77) — which is an identity when fg === bg and let
+    // full-block glyphs (scrollbar thumbs) escape the scrim (@km 19684).
     expect(cell.fg).not.toBeNull()
     const fg = cell.fg as { r: number; g: number; b: number }
-    expect(fg.r).toBe(255)
+    expect(fg.r).toBe(77)
     expect(fg.g).toBe(77)
     expect(fg.b).toBe(77)
 
@@ -1359,5 +1365,77 @@ describe("backdrop fade: opaque bg darkens under null scrim (@km 19665)", () => 
     expect(postBg.r).toBe(35)
     expect(postBg.g).toBe(39)
     expect(postBg.b).toBe(48)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regression (@km 19684): a BLOCK glyph whose fg equals its bg must fade on the
+// FOREGROUND channel.
+//
+// Defect: on the legacy (scrim === null) path the fg receded toward the cell's
+// OWN bg — `fg' = mixSrgb(fg, bg, α)`. That is an identity whenever fg === bg,
+// which is exactly the shape of a scrollbar thumb painted as a full block
+// ("█") whose fg is the thumb colour and whose bg is the thumb colour. The bg
+// still faded (it recedes toward the scene target), so the cell LOOKED dimmed
+// on the bg channel while the glyph that is actually painted stayed at full
+// brightness.
+//
+// The scrim contract is `out = cell * (1 - α) + scrim * α` on BOTH channels:
+// with fg === bg there is no contrast to preserve, so the scrim must land both
+// channels on the same colour. Anything else invents contrast out of nothing
+// and keeps the thumb bright over its dimmed track.
+//
+// Legacy path (no ThemeProvider → findRootThemeBg null → scrim === null). The
+// region is predominantly dark, so the scene target is #000000.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("backdrop fade: block glyph fg === bg (@km 19684)", () => {
+  const THUMB = "#d8dee9" // silvercode's scrollbar thumb, 216,222,233
+
+  function ScrollbarScene({ open }: { open: boolean }) {
+    return (
+      <Box backgroundColor="#1e1e2e" width={20} height={5}>
+        <Backdrop fade={open ? 0.25 : 0} width={20} height={5}>
+          <Box flexDirection="column" width={20} height={5}>
+            {/* The thumb: a full block glyph whose fg IS the cell bg. */}
+            <Box backgroundColor={THUMB}>
+              <Text color={THUMB}>{"█"}</Text>
+            </Box>
+            {Array.from({ length: 4 }, (_, i) => (
+              <Text key={i} color="#d8dee9">{`track-${i}`}</Text>
+            ))}
+          </Box>
+        </Backdrop>
+      </Box>
+    )
+  }
+
+  test("full-block glyph fg dims with the scrim and lands on its faded bg", () => {
+    const render = createRenderer({ cols: 20, rows: 5 })
+
+    const app = render(<ScrollbarScene open={false} />)
+    const pre = app.cell(0, 0)
+    expect(pre.char).toBe("█")
+    expect(pre.fg).not.toBeNull()
+    expect(pre.bg).not.toBeNull()
+    // Fixture premise: the block glyph's fg IS its bg (no contrast at all).
+    expect(pre.fg).toEqual(pre.bg)
+    expect(pre.fg).toEqual({ r: 216, g: 222, b: 233 })
+
+    app.rerender(<ScrollbarScene open={true} />)
+    const post = app.cell(0, 0)
+    expect(post.char).toBe("█")
+
+    // The GLYPH channel is what a block paints with — it must recede.
+    expect(post.fg).not.toBeNull()
+    expect(post.fg).not.toEqual(pre.fg)
+    expect(post.fg!.r).toBeLessThan(216)
+    expect(post.fg!.g).toBeLessThan(222)
+    expect(post.fg!.b).toBeLessThan(233)
+
+    // scrim === null, predominantly-dark region → target #000000 at α=0.25:
+    // (216,222,233) * 0.75 = (162,167,175), the same value the bg channel takes.
+    expect(post.fg).toEqual({ r: 162, g: 167, b: 175 })
+    expect(post.fg).toEqual(post.bg)
   })
 })

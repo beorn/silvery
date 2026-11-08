@@ -430,21 +430,36 @@ function fadeCell(
   const fgHex = rawFgHex
 
   // Legacy path (no scrim — no theme context resolved a default bg). Two
-  // channels, same as the scrim path but with a SCENE-LEVEL polarity target:
+  // channels, same as the scrim path but with a SCENE-LEVEL polarity target
+  // standing in for the scrim, and BOTH channels compositing toward it:
   //
-  //   fg' = mixSrgb(fg, cell.bg, amount)     // fg recedes toward its own bg
-  //   bg' = mixSrgb(bg, sceneTarget, amount) // bg recedes toward the scene
+  //   fg' = mixSrgb(fg, cellTarget, amount)  // fg recedes toward the scene
+  //   bg' = mixSrgb(bg, cellTarget, amount)  // bg recedes toward the scene
   //                                          // polarity (dark scene → black,
   //                                          // light scene → white)
   //
-  // `sceneTarget` is the SINGLE region target sampled in `realizeToBuffer`
+  // That is the scrim contract this pass exists to implement —
+  // `out = cell * (1 - α) + scrim * α` on every channel (`plan.ts`, and the
+  // backdrop test suite's stated model). The fg MUST take the same target as
+  // the bg. An earlier revision receded fg toward the cell's OWN bg instead
+  // (`mixSrgb(fg, bg, amount)`), which is an IDENTITY whenever fg === bg —
+  // exactly the shape of a scrollbar thumb painted as a full block ("█")
+  // whose fg is the thumb colour and whose bg is that same colour. Such a
+  // glyph kept its full brightness while only the bg receded, so the thumb
+  // stayed bright over its dimmed track (@km 19684). With fg === bg there is
+  // no contrast to preserve, so both channels must land on the SAME faded
+  // colour; receding toward the scene target guarantees it, and for ordinary
+  // text on a panel it differs from the old result only by the panel's own
+  // (small) distance from the target.
+  //
+  // `cellTarget` is the SINGLE region target sampled in `realizeToBuffer`
   // (`sampleRegionScrimTarget`), shared by every cell in the region. This is
-  // the @km 19684 fix: a per-cell target (the @km 19665 behavior) sent a LIGHT
-  // element toward WHITE even on a dark scene, brightening it under the modal
-  // instead of receding. Scene polarity keeps a light scrollbar on a dark
-  // scene darkening WITH the scene. When the region had no resolvable sample
-  // (`regionTarget === null`), fall back to the per-cell `legacyScrimTargetFor`
-  // heuristic for this cell.
+  // the 19684 scene-level polarity fix: a per-cell target (the @km 19665
+  // behavior) sent a LIGHT element toward WHITE even on a dark scene,
+  // brightening it under the modal instead of receding. Scene polarity keeps
+  // a light scrollbar on a dark scene darkening WITH the scene. When the
+  // region had no resolvable sample (`regionTarget === null`), fall back to
+  // the per-cell `legacyScrimTargetFor` heuristic for this cell.
   //
   // The bg recede is the load-bearing fix from 19665: opaque background blocks
   // (e.g. an app's status bar painted with an explicit hex bg) must recede
@@ -457,9 +472,10 @@ function fadeCell(
   const darkenedBgRgb = bgHex !== null ? hexToRgb(mixSrgb(bgHex, cellTarget, amount)) : null
 
   if (bgHex !== null && darkenedBgRgb) {
-    // fg recedes toward the ORIGINAL bg (preserves the historical legacy fg
-    // result); the bg darkens separately toward the polarity target.
-    const mixedFgRgb = fgHex ? hexToRgb(mixSrgb(fgHex, bgHex, amount)) : null
+    // fg composites toward the SAME scene target as the bg — see the block
+    // comment above. Receding toward the cell's own bg instead is what left a
+    // block glyph (fg === bg) at full brightness under the scrim (@km 19684).
+    const mixedFgRgb = fgHex ? hexToRgb(mixSrgb(fgHex, cellTarget, amount)) : null
 
     // Emoji glyphs ignore fg color — the fg mix has no visible effect on the
     // glyph. Stamp attrs.dim on lead + continuation so terminals honoring SGR
