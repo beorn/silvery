@@ -33,7 +33,7 @@ Manually connect to React DevTools. Returns `true` on success, `false` on failur
 Safe to call multiple times; subsequent calls are no-ops.
 
 ```ts
-import { connectDevTools } from "@silvery/ag-term"
+import { connectDevTools } from "silvery"
 
 const connected = await connectDevTools()
 if (connected) {
@@ -46,7 +46,7 @@ if (connected) {
 Check whether DevTools are currently connected.
 
 ```ts
-import { isDevToolsConnected } from "@silvery/ag-term"
+import { isDevToolsConnected } from "silvery"
 
 if (isDevToolsConnected()) {
   // DevTools are active
@@ -73,6 +73,17 @@ When `DEBUG_DEVTOOLS=1` (or `DEBUG_DEVTOOLS=true`) is set, Silvery automatically
 | `react-devtools` (CLI) | Yes      | Standalone DevTools electron app |
 
 All are optional peer dependencies. If not installed, `connectDevTools()` returns `false` and logs a helpful warning.
+
+They are declared as optional peers of the `silvery` package: installing Silvery does
+not install them, and nothing from them is bundled into the published tarball.
+
+## Upgrading
+
+DevTools is a development-only feature, and its backend is not bundled. An app that
+relied on the backend arriving inside Silvery must install the optional peers itself
+(`bun add -d react-devtools-core ws`) to keep DevTools working. Without them, ordinary
+rendering is unaffected: `connectDevTools()` returns `false` and logs a warning only
+when DevTools is explicitly requested.
 
 ## Troubleshooting
 

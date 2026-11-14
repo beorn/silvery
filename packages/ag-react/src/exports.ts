@@ -1288,7 +1288,7 @@ export type { NonTTYOptions, ResolvedNonTTYMode } from "@silvery/ag-term/non-tty
  * @example
  * ```ts
  * // Manual connection
- * import { connectDevTools } from '@silvery/ag-react';
+ * import { connectDevTools } from 'silvery';
  * await connectDevTools();
  *
  * // Or use env var: DEBUG_DEVTOOLS=1 bun run app.ts

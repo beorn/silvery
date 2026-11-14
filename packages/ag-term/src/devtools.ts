@@ -33,7 +33,7 @@ let connected = false
  *
  * @example
  * ```ts
- * import { connectDevTools } from '@silvery/ag-react';
+ * import { connectDevTools } from 'silvery';
  * await connectDevTools();
  * // Now open React DevTools standalone to inspect the component tree
  * ```
@@ -63,6 +63,11 @@ export async function connectDevTools(): Promise<boolean> {
       // @ts-expect-error -- polyfill for devtools
       globalThis.window = globalThis
     }
+    // The backend reads the web-worker global; Node has window but not self.
+    if (typeof globalThis.self === "undefined") {
+      // @ts-expect-error -- polyfill for devtools
+      globalThis.self = globalThis
+    }
 
     // Configure component filters to hide silvery internals from the DevTools tree.
     // Filter types from react-devtools-shared/src/types.js:
@@ -76,9 +81,20 @@ export async function connectDevTools(): Promise<boolean> {
     }
 
     // @ts-expect-error -- react-devtools-core has no type declarations
-    const devtools = await import("react-devtools-core")
-    devtools.initialize()
-    devtools.connectToDevTools()
+    const devtools = (await import("react-devtools-core")) as {
+      initialize?: () => void
+      connectToDevTools?: () => void
+      default?: { initialize: () => void; connectToDevTools: () => void }
+    }
+    // Node exposes this CommonJS backend under `default`; Bun also hoists its
+    // properties onto the namespace. Take whichever carries the actual API.
+    const backend: { initialize: () => void; connectToDevTools: () => void } | undefined =
+      typeof devtools.initialize === "function" && typeof devtools.connectToDevTools === "function"
+        ? { initialize: devtools.initialize, connectToDevTools: devtools.connectToDevTools }
+        : devtools.default
+    if (!backend) throw new Error("react-devtools-core exposed no initialize() to call")
+    backend.initialize()
+    backend.connectToDevTools()
 
     // Inject renderer info so DevTools can identify silvery.
     // rendererPackageName and rendererVersion are read from the host config

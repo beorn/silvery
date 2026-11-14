@@ -181,7 +181,9 @@
     "@termless/test": ">=0.9.1 <1.0.0",
     "@termless/xtermjs": ">=0.9.1 <1.0.0",
     "playwright": ">=1.40.0",
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-devtools-core": "^7.0.1",
+    "ws": "^8.22.0"
   },
   "peerDependenciesMeta": {
     "@termless/ghostty": {
@@ -197,6 +199,12 @@
       "optional": true
     },
     "playwright": {
+      "optional": true
+    },
+    "react-devtools-core": {
+      "optional": true
+    },
+    "ws": {
       "optional": true
     }
   },
@@ -285,13 +293,11 @@
     "micromark-util-resolve-all": "2.0.1",
     "micromark-util-subtokenize": "2.1.0",
     "pako": "1.0.11",
-    "react-devtools-core": "7.0.1",
     "slice-ansi": "9.0.1",
     "unist-util-is": "6.0.1",
     "unist-util-stringify-position": "4.0.0",
     "unist-util-visit-parents": "6.1.0",
     "upng-js": "2.1.0",
-    "ws": "8.22.0",
     "yoga-wasm-web": "0.3.3"
   },
   "patchedDependencies": {

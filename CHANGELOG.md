@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- `silvery` now declares `react-devtools-core` and `ws` as optional peer dependencies, so the DevTools backend is no longer copied into the published tarball. An app that wants DevTools installs both itself (`bun add -d react-devtools-core ws`); an app that never requests DevTools is unaffected, because ordinary rendering loads neither peer and `connectDevTools()` returns `false` with a warning only when DevTools is explicitly enabled.
+
+### Fixed
+
+- `connectDevTools()` now initializes under Node. The backend reads a web-worker global that Node does not define, so the call failed before it could start; Bun was unaffected because it defines that global.
+
 ## [0.29.3] - 2026-11-14
 
 ### Fixed
