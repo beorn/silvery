@@ -4,6 +4,8 @@
  *   utilities but not tokenizeAnsi or its token type.
  * @level l1
  * @consumer silvery/ui/ansi subpath surface
+ * @testonly none: this test imports only the published silvery/ui/ansi entry, so it needs no
+ *   production symbol that exists for its sake
  */
 import { describe, expect, it } from "vitest"
 import { tokenizeAnsi, type AnsiToken } from "silvery/ui/ansi"
