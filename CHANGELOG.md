@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.29.3] - 2026-11-14
+
+### Fixed
+
+- `@silvery/color` 0.29.2 was published without `dist/design`, so the declared `@silvery/color/design` entry pointed at a file the tarball did not contain. No source changed: the commit behind 0.29.2 already built and shipped that entry, and only the packed artifact was wrong. 0.29.3 publishes the artifact the source produces, for this package and the nine others released with it.
+
 ## [0.29.2] - 2026-11-14
 
 ### Added

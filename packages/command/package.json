@@ -1,6 +1,6 @@
 {
   "name": "@silvery/command",
-  "version": "0.29.2",
+  "version": "0.29.3",
   "description": "Serializable command trees, registries, operations, and platform-neutral command nodes for every Silvery target",
   "keywords": [
     "command",

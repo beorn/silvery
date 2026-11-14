@@ -1,6 +1,6 @@
 {
   "name": "@silvery/selection",
-  "version": "0.29.2",
+  "version": "0.29.3",
   "description": "Pure selection state machine for silvery apps — node selection, sub-selection, pointer gestures",
   "license": "MIT",
   "author": "Bjorn Stabell <bjorn@stabell.org>",
@@ -26,7 +26,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/signals": "0.29.2"
+    "@silvery/signals": "0.29.3"
   },
   "devDependencies": {
     "tsdown": "0.23.7",

@@ -1,6 +1,6 @@
 {
   "name": "@silvery/color",
-  "version": "0.29.2",
+  "version": "0.29.3",
   "description": "Pure color math and Sterling design tokens — conversion, blending, contrast and paired CSS. Zero dependencies.",
   "keywords": [
     "color",
