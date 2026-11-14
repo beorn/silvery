@@ -7,6 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.29.2] - 2026-11-14
+
+### Added
+
+- `silvery/ui/ansi` now exports `tokenizeAnsi` and its `AnsiToken` type. A consumer that needs the tokenizer Silvery itself uses can reach it under the published entry name instead of importing `@silvery/ag-term` internals.
+
+### Fixed
+
+- Screenshot capture sizes itself to the measured cell box rather than the browser viewport, and clips to the box a reflow leaves. Captured rows stay on the cell grid, so a row that cannot be measured now fails loudly instead of rendering as a missing row.
+- Backdrop fading moves block-glyph foreground colours toward the scene target instead of their own background.
+
 ## [0.29.1] - 2026-11-07
 
 ### Fixed

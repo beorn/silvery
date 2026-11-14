@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@silvery/ag": "0.29.0",
-    "@silvery/command": "0.29.1"
+    "@silvery/command": "0.29.2"
   },
   "tsdown": {
     "clean": true,

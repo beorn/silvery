@@ -80,10 +80,10 @@
     "@silvery/ag": "0.29.0",
     "@silvery/ag-react": "0.29.0",
     "@silvery/ag-term": "0.29.0",
-    "@silvery/ansi": "0.29.1",
+    "@silvery/ansi": "0.29.2",
     "@silvery/commands": "0.29.0",
     "@silvery/headless": "0.29.0",
-    "@silvery/signals": "0.29.1"
+    "@silvery/signals": "0.29.2"
   },
   "devDependencies": {
     "@silvery/test": "0.29.0"
