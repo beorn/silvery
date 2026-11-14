@@ -41,3 +41,7 @@ export {
   isTTY,
   getTerminalWidth,
 } from "../cli/ansi"
+
+// 34148: the ANSI tokenizer, exported here because this package already depends on
+// @silvery/ag-term; the root entry re-exports this module, so `silvery/ui/ansi` carries it.
+export { tokenizeAnsi, type AnsiToken } from "@silvery/ag-term"
