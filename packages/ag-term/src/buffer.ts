@@ -869,7 +869,7 @@ export class TerminalBuffer {
    * Optimized: resolves defaults and packs metadata inline to avoid
    * allocating an intermediate Cell object.
    */
-  setCell(x: number, y: number, cell: CellPatch): void {
+  setCell(x: number, y: number, cell: CellPatch, selectable?: boolean): void {
     if (!this.inBounds(x, y)) {
       return
     }
@@ -943,7 +943,7 @@ export class TerminalBuffer {
     if (continuation) packed |= CONTINUATION_FLAG
     if (isTrueColor(fg)) packed |= TRUE_COLOR_FG_FLAG
     if (isTrueColor(bg)) packed |= TRUE_COLOR_BG_FLAG
-    if (cell.selectable) packed = (packed | SELECTABLE_FLAG) >>> 0
+    if (selectable ?? cell.selectable) packed = (packed | SELECTABLE_FLAG) >>> 0
     this.cells[idx] = packed
   }
 

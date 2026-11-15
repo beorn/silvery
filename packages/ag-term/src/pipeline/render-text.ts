@@ -2590,7 +2590,7 @@ export function renderText(
         lineSelectable,
       )
     }
-    if (childSpans.length > 0 && lineIdx < lineOffsets.length) {
+    if (nestedUserSelectOverride && childSpans.length > 0 && lineIdx < lineOffsets.length) {
       const { start, end } = lineOffsets[lineIdx]!
       applySelectableSpansToLine(
         buffer,

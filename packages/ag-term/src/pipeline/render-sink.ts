@@ -342,7 +342,7 @@ export class BufferSink implements RenderSink {
     // gate read otherwise. See strict-bordered-rect.ts for the full
     // contract and the per-renderer-call memoization.
     assertCellInsideBorderedRect(x, y, { char: cell.char, fg: cell.fg, bg: cell.bg })
-    this.buffer.setCell(x, y, this.selectableCell(cell, selectable))
+    this.buffer.setCell(x, y, cell, selectable)
   }
 
   emitPaintFill(
@@ -793,7 +793,8 @@ export class PlanSink implements RenderSink {
 
   private selectableCell(cell: CellPatch, selectable: boolean | undefined): SelectableCellPatch {
     const cloned = cloneCellPatch(cell)
-    return selectable === undefined ? cloned : { ...cloned, selectable }
+    if (selectable !== undefined) cloned.selectable = selectable
+    return cloned
   }
 
   /**
