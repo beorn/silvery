@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync } from "node:fs"
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -13,6 +13,24 @@ beforeEach(async () => {
 })
 
 describe("loadConfig — basics", () => {
+  it("treats an empty XDG_CONFIG_HOME as absent, never a cwd-relative path", async () => {
+    // `??` would keep `""` and resolve `<appName>/config.yaml` against the cwd, so a
+    // reader would pick up a config from whatever directory it was started in.
+    const previous = process.env["XDG_CONFIG_HOME"]
+    process.env["XDG_CONFIG_HOME"] = ""
+    try {
+      const config = await loadConfig({ appName: "silvery-empty-xdg", searchProject: false })
+      const expectedRoot =
+        process.platform === "win32"
+          ? (process.env["APPDATA"] ?? join(homedir(), "AppData", "Roaming"))
+          : join(homedir(), ".config")
+      expect(config.globalPath).toBe(join(expectedRoot, "silvery-empty-xdg", "config.yaml"))
+    } finally {
+      if (previous === undefined) delete process.env["XDG_CONFIG_HOME"]
+      else process.env["XDG_CONFIG_HOME"] = previous
+    }
+  })
+
   it("loads a missing file as empty (createIfMissing default true)", async () => {
     const config = await loadConfig({ path: join(tmpDir, "missing.yaml") })
     expect(config.get("anything")).toBeUndefined()

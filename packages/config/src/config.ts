@@ -307,7 +307,11 @@ function defaultGlobalPath(appName: string): string {
   }
   // Linux + macOS: XDG-style. macOS users overwhelmingly expect ~/.config/<app>
   // for CLI tools rather than ~/Library/Preferences (which is for GUI apps).
-  const xdg = process.env["XDG_CONFIG_HOME"] ?? join(homedir(), ".config")
+  // `||`, not `??`: an EMPTY XDG_CONFIG_HOME means "unset" for every caller that
+  // sets or clears it, and `??` would keep the empty string and resolve to a
+  // cwd-relative `<appName>/config.yaml` — a reader silently picking up whatever
+  // happens to sit in the directory it was started in (@dev/10 34127 empty-XDG).
+  const xdg = process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config")
   return join(xdg, appName, "config.yaml")
 }
 
