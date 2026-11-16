@@ -341,6 +341,16 @@ async function loadOrInitSource(path: string, createIfMissing: boolean): Promise
   if (existsSync(path)) {
     const text = await readFile(path, "utf8")
     const doc = parseDocument(text, { keepSourceTokens: true })
+    // `parseDocument` collects parser errors on the document and still exposes whatever it could
+    // recover. Treating that recovered content as configuration turns a typo into a silently
+    // different config — a duplicate `backup.floor_bytes` key or an unclosed flow collection
+    // would load as *some* document and its values would be believed (@cto 34127-loader-correction-0902).
+    // Warnings stay warnings: only `doc.errors` refuses.
+    const first = doc.errors[0]
+    if (first !== undefined) {
+      const more = doc.errors.length > 1 ? ` (and ${doc.errors.length - 1} more)` : ""
+      throw new Error(`config: ${path} has ${doc.errors.length} YAML parser error(s): ${first.message}${more}`)
+    }
     const raw = (doc.toJS() as Record<string, unknown> | null) ?? {}
     return { path, doc, raw }
   }

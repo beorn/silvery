@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs"
+import { existsSync, mkdtempSync } from "node:fs"
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -182,5 +182,37 @@ describe("onChange notifications", () => {
     config.set("x", 1)
     await config.save()
     expect(events).toEqual([])
+  })
+})
+
+describe("a document with YAML parser errors is refused, not half-believed", () => {
+  const tmpBase = () => mkdtempSync(join(tmpdir(), "silvery-config-parser-"))
+
+  it("refuses a duplicate key instead of keeping one of the two values", async () => {
+    const path = join(tmpBase(), "config.yaml")
+    await writeFile(path, "backup:\n  floor_bytes: 456\nbackup:\n  floor_bytes: 789\n")
+    await expect(loadConfig({ path })).rejects.toThrow(/YAML parser error/)
+    await expect(loadConfig({ path })).rejects.toThrow(/Map keys must be unique/)
+  })
+
+  it("refuses an unclosed flow collection even beside a valid key", async () => {
+    const path = join(tmpBase(), "config.yaml")
+    await writeFile(path, "backup:\n  floor_bytes: 789\nother: [1, 2\n")
+    await expect(loadConfig({ path })).rejects.toThrow(/YAML parser error/)
+  })
+
+  it("still loads a document with warnings and unrelated settings", async () => {
+    const path = join(tmpBase(), "config.yaml")
+    await writeFile(path, "# a comment\nbackup:\n  floor_bytes: 5\ntagged: !foo bar\n")
+    const config = await loadConfig({ path })
+    expect(config.get("backup.floor_bytes")).toBe(5)
+  })
+
+  it("still loads valid configuration with comments and key order intact", async () => {
+    const path = join(tmpBase(), "config.yaml")
+    await writeFile(path, "# top\nbeads:\n  prefix: km\n\n# the floor\nbackup:\n  floor_bytes: 1024\n")
+    const config = await loadConfig({ path })
+    expect(config.get("backup.floor_bytes")).toBe(1024)
+    expect(config.get("beads.prefix")).toBe("km")
   })
 })
