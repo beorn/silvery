@@ -349,7 +349,9 @@ async function loadOrInitSource(path: string, createIfMissing: boolean): Promise
     const first = doc.errors[0]
     if (first !== undefined) {
       const more = doc.errors.length > 1 ? ` (and ${doc.errors.length - 1} more)` : ""
-      throw new Error(`config: ${path} has ${doc.errors.length} YAML parser error(s): ${first.message}${more}`)
+      throw new Error(
+        `config: ${path} has ${doc.errors.length} YAML parser error(s): ${first.message}${more}`,
+      )
     }
     const raw = (doc.toJS() as Record<string, unknown> | null) ?? {}
     return { path, doc, raw }
@@ -404,8 +406,9 @@ function unsetDeep(obj: Record<string, unknown>, key: string): void {
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i] as string
     const next = cur[p]
-    if (next === undefined || next === null || typeof next !== "object" || Array.isArray(next))
+    if (next === undefined || next === null || typeof next !== "object" || Array.isArray(next)) {
       return
+    }
     cur = next as Record<string, unknown>
   }
   delete cur[parts[parts.length - 1] as string]
