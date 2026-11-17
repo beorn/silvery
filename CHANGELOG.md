@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `silvery/pipe`: the one composition primitive (`pipe` + `AppPlugin`, implemented once in `@silvery/create/pipe`) is now a standalone published subpath. It imports nothing, so a consumer outside Silvery's app surface can pin it by exact version and compose values without importing the app barrel or any UI dependency. Overloads now cover up to twelve plugins. (32325 Slice A)
+
 ### Changed
 
 - `silvery` now declares `react-devtools-core` and `ws` as optional peer dependencies, so the DevTools backend is no longer copied into the published tarball. An app that wants DevTools installs both itself (`bun add -d react-devtools-core ws`); an app that never requests DevTools is unaffected, because ordinary rendering loads neither peer and `connectDevTools()` returns `false` with a warning only when DevTools is explicitly enabled.

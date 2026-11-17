@@ -106,6 +106,71 @@ export function pipe<A, B, C, D, E, F, G, H>(
   p6: AppPlugin<F, G>,
   p7: AppPlugin<G, H>,
 ): H
+export function pipe<A, B, C, D, E, F, G, H, I>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+  p4: AppPlugin<D, E>,
+  p5: AppPlugin<E, F>,
+  p6: AppPlugin<F, G>,
+  p7: AppPlugin<G, H>,
+  p8: AppPlugin<H, I>,
+): I
+export function pipe<A, B, C, D, E, F, G, H, I, J>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+  p4: AppPlugin<D, E>,
+  p5: AppPlugin<E, F>,
+  p6: AppPlugin<F, G>,
+  p7: AppPlugin<G, H>,
+  p8: AppPlugin<H, I>,
+  p9: AppPlugin<I, J>,
+): J
+export function pipe<A, B, C, D, E, F, G, H, I, J, K>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+  p4: AppPlugin<D, E>,
+  p5: AppPlugin<E, F>,
+  p6: AppPlugin<F, G>,
+  p7: AppPlugin<G, H>,
+  p8: AppPlugin<H, I>,
+  p9: AppPlugin<I, J>,
+  p10: AppPlugin<J, K>,
+): K
+export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+  p4: AppPlugin<D, E>,
+  p5: AppPlugin<E, F>,
+  p6: AppPlugin<F, G>,
+  p7: AppPlugin<G, H>,
+  p8: AppPlugin<H, I>,
+  p9: AppPlugin<I, J>,
+  p10: AppPlugin<J, K>,
+  p11: AppPlugin<K, L>,
+): L
+export function pipe<A, B, C, D, E, F, G, H, I, J, K, L, M>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+  p4: AppPlugin<D, E>,
+  p5: AppPlugin<E, F>,
+  p6: AppPlugin<F, G>,
+  p7: AppPlugin<G, H>,
+  p8: AppPlugin<H, I>,
+  p9: AppPlugin<I, J>,
+  p10: AppPlugin<J, K>,
+  p11: AppPlugin<K, L>,
+  p12: AppPlugin<L, M>,
+): M
 export function pipe(base: unknown, ...plugins: AppPlugin<unknown, unknown>[]): unknown {
   let result = base
   for (const plugin of plugins) {
