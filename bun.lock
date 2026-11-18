@@ -93,7 +93,7 @@
       "dependencies": {
         "@silvery/ansi": "0.29.3",
         "@silvery/signals": "0.29.3",
-        "loggily": "^0.13.0 || ^0.14.0",
+        "loggily": "0.13.0",
       },
     },
     "packages/ag-react": {
@@ -111,7 +111,7 @@
         "@silvery/signals": "0.29.3",
         "@silvery/syntax": "0.29.3",
         "@types/mdast": "4.0.4",
-        "loggily": "^0.13.0 || ^0.14.0",
+        "loggily": "0.13.0",
         "mdast-util-from-markdown": "2.1.0",
         "mdast-util-gfm-autolink-literal": "2.0.1",
         "mdast-util-gfm-strikethrough": "2.0.1",
@@ -144,7 +144,7 @@
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/xtermjs": ">=0.9.1 <1.0.0",
         "flexily": "0.8.5",
-        "loggily": "^0.13.0 || ^0.14.0",
+        "loggily": "0.13.0",
         "lru-cache": "11.5.3",
       },
       "peerDependencies": {
