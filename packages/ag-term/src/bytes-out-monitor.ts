@@ -15,7 +15,9 @@
  *
  * Behavior (fixed thresholds — no env knobs):
  * - WARN at sustained ≥1 MB/s over a 10s window. Emits a `silvery:bytes_out`
- *   log + writes frame summaries to `/tmp/silvery-bytes-out-warn-<pid>-<ts>.txt`.
+ *   log + writes frame summaries to
+ *   `<tmpdir>/silvery-bytes-out-warn-<pid>-<ts>.summary.txt`, where `<tmpdir>`
+ *   is the platform temporary directory (`os.tmpdir()`, which honours TMPDIR).
  *   Cooldown 10s before re-trip.
  * - PANIC at burst ≥100 MB/s over a 2s window. Emits frame summaries AND a
  *   v8 heap snapshot. Cooldown 60s before re-trip.
@@ -86,7 +88,10 @@ export interface BytesOutMonitorOptions {
   panicMbPerSec?: number
   /** TEST: skip the v8 heap snapshot at PANIC. Production always writes one. */
   skipHeapSnapshot?: boolean
-  /** TEST: snapshot output directory. Production is `/tmp`. */
+  /**
+   * TEST: snapshot output directory. Production passes none: dumps go to the
+   * platform temporary directory (`os.tmpdir()`, which honours TMPDIR).
+   */
   snapshotDir?: string
   /** TEST: logger override (minimal warn/error surface; full ConditionalLogger also accepted). */
   logger?: BytesOutLogger | ConditionalLogger
@@ -124,7 +129,9 @@ export function createBytesOutMonitor(options: BytesOutMonitorOptions = {}): Byt
   const warnMbPerSec = options.warnMbPerSec ?? DEFAULT_WARN_MB_PER_SEC
   const panicMbPerSec = options.panicMbPerSec ?? DEFAULT_PANIC_MB_PER_SEC
   const skipHeapSnapshot = options.skipHeapSnapshot ?? false
-  const snapshotDir = options.snapshotDir ?? "/tmp"
+  // Without an explicit snapshotDir the dump directory is read when a dump is
+  // written, so creating the monitor never loads node:os.
+  const snapshotDir = options.snapshotDir
   const log = options.logger ?? createLogger(NS)
   const now = options.now ?? Date.now
   const writeHeapSnapshot = options.writeHeapSnapshot ?? defaultWriteHeapSnapshot
@@ -202,12 +209,13 @@ export function createBytesOutMonitor(options: BytesOutMonitorOptions = {}): Byt
     const burstBytes = sumBytesInWindow(PANIC_WINDOW_MS, t)
     if (burstBytes < panicBytesInWindow) return false
 
-    const summaryPath = `${snapshotDir}/silvery-bytes-out-panic-${pid}-${t}.summary.txt`
+    const dir = snapshotDir ?? platformTmpdir()
+    const summaryPath = `${dir}/silvery-bytes-out-panic-${pid}-${t}.summary.txt`
     dumpFrameSummaries(summaryPath)
 
     let snapshotPath: string | undefined
     if (!skipHeapSnapshot) {
-      const candidate = `${snapshotDir}/silvery-firehose-${pid}-${t}.heapsnapshot`
+      const candidate = `${dir}/silvery-firehose-${pid}-${t}.heapsnapshot`
       try {
         const written = writeHeapSnapshot(candidate)
         snapshotPath = typeof written === "string" ? written : candidate
@@ -232,7 +240,7 @@ export function createBytesOutMonitor(options: BytesOutMonitorOptions = {}): Byt
     const sustainedBytes = sumBytesInWindow(WARN_WINDOW_MS, t)
     if (sustainedBytes < warnBytesInWindow) return false
 
-    const summaryPath = `${snapshotDir}/silvery-bytes-out-warn-${pid}-${t}.summary.txt`
+    const summaryPath = `${snapshotDir ?? platformTmpdir()}/silvery-bytes-out-warn-${pid}-${t}.summary.txt`
     dumpFrameSummaries(summaryPath)
 
     const mbPerSec = sustainedBytes / 1_000_000 / (WARN_WINDOW_MS / 1000)
@@ -298,4 +306,10 @@ function defaultWriteFile(path: string, contents: string): void {
 function loadV8(): typeof import("node:v8") {
   // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
   return process.getBuiltinModule("node:v8")
+}
+
+/** The platform temporary directory (honours TMPDIR), the default dump directory. */
+function platformTmpdir(): string {
+  // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
+  return process.getBuiltinModule("node:os").tmpdir()
 }

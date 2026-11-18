@@ -3,8 +3,26 @@
  *
  * Run: bun vitest run --project vendor vendor/silvery/tests/features/bytes-out-monitor.test.ts
  */
-import { describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { dirname, join } from "node:path"
 import { createBytesOutMonitor } from "@silvery/ag-term/bytes-out-monitor"
+
+const callerTmps: string[] = []
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  for (const dir of callerTmps.splice(0)) rmSync(dir, { recursive: true, force: true })
+})
+
+/** Point TMPDIR at a fresh directory for this test; afterEach restores and removes it. */
+function stubCallerTmpdir(): string {
+  const dir = mkdtempSync(join(tmpdir(), "silvery-bytes-out-tmpdir-"))
+  callerTmps.push(dir)
+  vi.stubEnv("TMPDIR", dir)
+  return dir
+}
 
 interface CapturedLog {
   level: "warn" | "error"
@@ -298,6 +316,70 @@ describe("createBytesOutMonitor", () => {
     m.recordWrite(600, 1_000)
     // After eviction, only the freshest record survives.
     expect(m.snapshotFrames().length).toBe(1)
+
+    m.dispose()
+  })
+
+  test("with no snapshotDir, dumps go to the caller's TMPDIR and name the files written", () => {
+    // Production passes no snapshotDir (#31167): the dumps follow the platform
+    // temporary directory, so a caller that sets TMPDIR gets them there.
+    const callerTmp = stubCallerTmpdir()
+    const h = makeHarness()
+    const m = createBytesOutMonitor({
+      warnMbPerSec: 1,
+      panicMbPerSec: 100,
+      logger: h.logger,
+      now: () => h.now(),
+      writeFile: h.writeFile,
+      writeHeapSnapshot: h.writeHeapSnapshot,
+    })
+
+    // WARN: 1 MB/s sustained over the 10 s window.
+    for (let i = 0; i < 50; i++) {
+      m.recordWrite(i, 200_000)
+      h.advance(200)
+    }
+    // PANIC: 100 MB/s burst over the 2 s window.
+    for (let i = 50; i < 75; i++) {
+      m.recordWrite(i, 10_000_000)
+      h.advance(100)
+    }
+
+    const written = [...h.files.map((f) => f.path), ...h.snapshots]
+    expect(written.map((path) => dirname(path))).toEqual([callerTmp, callerTmp, callerTmp])
+    const panicSummary = h.files.find((f) => f.path.includes("bytes-out-panic"))!.path
+    // The trip and the PANIC log name the files actually written.
+    expect(m.lastTrip?.summaryPath).toBe(panicSummary)
+    expect(m.lastTrip?.snapshotPath).toBe(h.snapshots[0])
+    expect(h.logs.find((l) => l.level === "error")?.data).toEqual({
+      summary: panicSummary,
+      heapSnapshot: h.snapshots[0],
+    })
+
+    m.dispose()
+  })
+
+  test("an explicit snapshotDir still wins over TMPDIR", () => {
+    stubCallerTmpdir()
+    const h = makeHarness()
+    const m = createBytesOutMonitor({
+      warnMbPerSec: 1,
+      panicMbPerSec: 100,
+      snapshotDir: "/explicit/dumps",
+      logger: h.logger,
+      now: () => h.now(),
+      writeFile: h.writeFile,
+      writeHeapSnapshot: h.writeHeapSnapshot,
+    })
+
+    for (let i = 0; i < 20; i++) {
+      m.recordWrite(i, 10_000_000)
+      h.advance(100)
+    }
+
+    const written = [...h.files.map((f) => f.path), ...h.snapshots]
+    expect(h.snapshots).toHaveLength(1)
+    expect(new Set(written.map((path) => dirname(path)))).toEqual(new Set(["/explicit/dumps"]))
 
     m.dispose()
   })

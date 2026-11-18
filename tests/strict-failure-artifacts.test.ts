@@ -4,8 +4,10 @@
  * verification fails. Verifies directory creation, file contents, and edge
  * cases (missing buffers, empty ANSI, no ctx).
  */
-import { describe, test, expect, afterEach } from "vitest"
-import { existsSync, readFileSync, rmSync, readdirSync } from "fs"
+import { describe, test, expect, afterEach, vi } from "vitest"
+import { existsSync, mkdtempSync, readFileSync, rmSync, readdirSync } from "fs"
+import { tmpdir } from "os"
+import { basename, join } from "path"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
 import { createBoundedStringCache } from "@silvery/ag-term/bounded-cache"
 import {
@@ -21,6 +23,7 @@ import {
 const createdDirs: string[] = []
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   for (const dir of createdDirs) {
     if (existsSync(dir)) {
       rmSync(dir, { recursive: true })
@@ -70,8 +73,30 @@ describe("captureStrictFailureArtifacts", () => {
     })
     createdDirs.push(dir)
 
-    expect(dir).toMatch(/^\/tmp\/silvery-strict-failure-\d+$/)
+    expect(dir).toBe(join(tmpdir(), basename(dir)))
+    expect(basename(dir)).toMatch(/^silvery-strict-failure-\d+$/)
     expect(existsSync(dir)).toBe(true)
+  })
+
+  test("writes the bundle under the caller's TMPDIR and names that directory", () => {
+    // The caller's temporary root wins over a fixed /tmp: a runner or an
+    // operator that sets TMPDIR gets the failure bundle there (#31167).
+    const callerTmp = mkdtempSync(join(tmpdir(), "silvery-strict-tmpdir-"))
+    createdDirs.push(callerTmp)
+    vi.stubEnv("TMPDIR", callerTmp)
+
+    const dir = captureStrictFailureArtifacts({
+      source: "test-source",
+      errorMessage: "mismatch under TMPDIR",
+    })
+    createdDirs.push(dir)
+
+    expect(dir).toBe(join(callerTmp, basename(dir)))
+    expect(basename(dir)).toMatch(/^silvery-strict-failure-\d+$/)
+    // The returned directory is the one written, so the error names real files.
+    expect(readFileSync(join(dir, "error.txt"), "utf-8")).toBe("mismatch under TMPDIR")
+    // Nothing for this capture at the old fixed root.
+    expect(existsSync(join("/tmp", basename(dir)))).toBe(false)
   })
 
   test("writes meta.json with source, sizes, and lengths", () => {

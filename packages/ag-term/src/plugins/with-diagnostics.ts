@@ -71,7 +71,10 @@ export interface DiagnosticOptions {
   skipLines?: number[]
   /** Capture screenshot on failure (default: false) */
   captureOnFailure?: boolean
-  /** Directory for failure screenshots (default: /tmp/silvery-diagnostics) */
+  /**
+   * Directory for failure screenshots (default: `silvery-diagnostics` under the
+   * platform temporary directory, `os.tmpdir()`, which honours TMPDIR)
+   */
   screenshotDir?: string
 }
 
@@ -804,7 +807,7 @@ export function withDiagnostics<T extends FullAppWithCommands>(
     checkLayout = true,
     skipLines = parseSkipLines(process.env.SILVERY_STABILITY_SKIP_LINES),
     captureOnFailure = false,
-    screenshotDir = "/tmp/silvery-diagnostics",
+    screenshotDir,
   } = options
 
   // If all checks are explicitly disabled, return app unchanged
@@ -817,9 +820,13 @@ export function withDiagnostics<T extends FullAppWithCommands>(
   ): Promise<string | null> {
     if (!captureOnFailure) return null
     try {
-      await mkdir(screenshotDir, { recursive: true })
+      // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
+      // The default directory is read only when a screenshot is captured.
+      const dir =
+        screenshotDir ?? join(process.getBuiltinModule("node:os").tmpdir(), "silvery-diagnostics")
+      await mkdir(dir, { recursive: true })
       const filename = `fail-${commandId}-${checkType}.png`
-      const filepath = join(screenshotDir, filename)
+      const filepath = join(dir, filename)
       await app.screenshot(filepath)
       return filepath
     } catch {

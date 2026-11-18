@@ -872,7 +872,8 @@ export function formatColor(c: number | { r: number; g: number; b: number } | nu
 /**
  * Capture debug artifacts to disk when a STRICT verification fails.
  * Saves prev/next buffer snapshots, ANSI sequences, terminal size, and test context
- * to /tmp/silvery-strict-failure-<timestamp>/.
+ * to silvery-strict-failure-<timestamp>/ under the platform temporary directory
+ * (`os.tmpdir()`, which honours TMPDIR).
  *
  * Returns the artifact directory path (included in the error message).
  */
@@ -898,11 +899,12 @@ export function captureStrictFailureArtifacts(opts: {
     // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
     // captureStrictFailureArtifacts is a synchronous diagnostic (returns the artifact
     // dir for the thrown error message), so it can't await import(); getBuiltinModule
-    // keeps node:fs/node:path out of browser/canvas bundles while staying sync.
+    // keeps node:fs/node:os/node:path out of browser/canvas bundles while staying sync.
     const fs = process.getBuiltinModule("node:fs")
+    const os = process.getBuiltinModule("node:os")
     const path = process.getBuiltinModule("node:path")
     const timestamp = Date.now()
-    const dir = `/tmp/silvery-strict-failure-${timestamp}`
+    const dir = path.join(os.tmpdir(), `silvery-strict-failure-${timestamp}`)
     fs.mkdirSync(dir, { recursive: true })
 
     // Metadata
