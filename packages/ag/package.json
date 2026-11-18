@@ -80,7 +80,7 @@
   "dependencies": {
     "@silvery/ansi": "0.29.3",
     "@silvery/signals": "0.29.3",
-    "loggily": "0.13.0"
+    "loggily": "^0.13.0 || ^0.14.0"
   },
   "tsdown": {
     "clean": true,

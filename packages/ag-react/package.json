@@ -157,7 +157,7 @@
     "@silvery/signals": "0.29.3",
     "@silvery/syntax": "0.29.3",
     "@types/mdast": "4.0.4",
-    "loggily": "0.13.0",
+    "loggily": "^0.13.0 || ^0.14.0",
     "mdast-util-from-markdown": "2.1.0",
     "mdast-util-gfm-autolink-literal": "2.0.1",
     "mdast-util-gfm-strikethrough": "2.0.1",

@@ -130,7 +130,7 @@
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
     "flexily": "^0.8.5",
-    "loggily": "^0.13.0",
+    "loggily": "^0.13.0 || ^0.14.0",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^9.0.1",
     "string-width": "^8.3.0"
