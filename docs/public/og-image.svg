@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#1a1a2e"/>
-  <text x="600" y="260" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="white">Silvery</text>
-  <text x="600" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="32" fill="#c0c0c0">React TUI Framework</text>
-  <rect x="200" y="420" width="800" height="4" fill="#c0c0c0" opacity="0.3"/>
-</svg>
