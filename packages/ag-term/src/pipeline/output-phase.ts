@@ -1397,25 +1397,18 @@ export function outputPhase(
     outputDetailAcc.outputBytes += incrOutput.length
   }
 
-  // Log output sizes when debug or strict-accumulate is enabled
+  // Log output sizes when debug or strict-accumulate is enabled. Human text on
+  // the silvery:output namespace, like the diff lines above (31167 A).
   if (DEBUG_OUTPUT || isStrictAccumulate()) {
-    const bytes = Buffer.byteLength(incrOutput)
-    try {
-      // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
-      const fs = process.getBuiltinModule("node:fs")
-      fs.appendFileSync(
-        "/tmp/silvery-sizes.log",
-        `changesToAnsi: ${count} changes, ${bytes} bytes\n`,
-      )
-    } catch {}
+    log.info?.(`changesToAnsi: ${count} changes, ${Buffer.byteLength(incrOutput)} bytes`)
   }
 
-  // Debug capture: write both incremental and fresh ANSI to files for comparison.
+  // Debug capture: compare the incremental replay against a fresh render each
+  // frame. The per-frame status is silvery:output text; on a mismatch the two
+  // replayable ANSI streams are saved as files for post-mortem replay.
   if (DEBUG_CAPTURE) {
     _debugFrameCount++
     try {
-      // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
-      const fs = process.getBuiltinModule("node:fs")
       const freshOutput = bufferToAnsi(next, ctx)
       const freshPrev = prev ? bufferToAnsi(prev, ctx) : ""
       // Replay incremental on top of fresh prev
@@ -1443,25 +1436,18 @@ export function outputPhase(
         }
       }
       const status = mismatchInfo || "MATCH"
-      fs.appendFileSync(
-        "/tmp/silvery-capture.log",
-        `Frame ${_debugFrameCount}: ${count} changes, ${status}\n`,
-      )
+      log.info?.(`Frame ${_debugFrameCount}: ${count} changes, ${status}`)
       if (mismatchInfo) {
+        // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
+        const fs = process.getBuiltinModule("node:fs")
         fs.writeFileSync(`/tmp/silvery-incr-${_debugFrameCount}.ansi`, freshPrev + incrOutput)
         fs.writeFileSync(`/tmp/silvery-fresh-${_debugFrameCount}.ansi`, freshOutput)
-        fs.appendFileSync(
-          "/tmp/silvery-capture.log",
-          `  Saved ANSI files: /tmp/silvery-incr-${_debugFrameCount}.ansi and /tmp/silvery-fresh-${_debugFrameCount}.ansi\n`,
+        log.info?.(
+          `Saved ANSI files: /tmp/silvery-incr-${_debugFrameCount}.ansi and /tmp/silvery-fresh-${_debugFrameCount}.ansi`,
         )
       }
     } catch (e) {
-      try {
-        // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
-        process
-          .getBuiltinModule("node:fs")
-          .appendFileSync("/tmp/silvery-capture.log", `Frame ${_debugFrameCount}: ERROR ${e}\n`)
-      } catch {}
+      log.warn?.(`Frame ${_debugFrameCount}: ERROR ${e}`)
     }
   }
 

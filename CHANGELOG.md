@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - `silvery` now declares `react-devtools-core` and `ws` as optional peer dependencies, so the DevTools backend is no longer copied into the published tarball. An app that wants DevTools installs both itself (`bun add -d react-devtools-core ws`); an app that never requests DevTools is unaffected, because ordinary rendering loads neither peer and `connectDevTools()` returns `false` with a warning only when DevTools is explicitly enabled.
+- Diagnostic text no longer goes to fixed files in `/tmp`. `SILVERY_TRACE=1`, `DEBUG=silvery:perf`, `SILVERY_DEBUG_OUTPUT` or `SILVERY_STRICT_ACCUMULATE`, and `SILVERY_DEBUG_CAPTURE` used to append to `/tmp/silvery-trace.log`, `/tmp/silvery-perf.log`, `/tmp/silvery-sizes.log` and `/tmp/silvery-capture.log`. The same flags now log that text on the `silvery:trace`, `silvery:perf` and `silvery:output` namespaces. A fullscreen app writes these records to `DEBUG_LOG` when it is set and otherwise prints them after it exits. The raw ANSI files written by `SILVERY_CAPTURE_RAW`, and by `SILVERY_DEBUG_CAPTURE` on a mismatch, are unchanged.
 
 ### Fixed
 

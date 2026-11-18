@@ -201,14 +201,7 @@ import { createModes, type MouseTrackingMode } from "./devices/modes"
 import { deriveProtocolModesFromFocusSubtree } from "./island-aggregator"
 import type { Term } from "../ansi/term"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
-import {
-  addWriter,
-  createFileWriter,
-  createLogger,
-  getLogLevel,
-  setLogLevel,
-  type LogLevel,
-} from "loggily"
+import { createLogger, setLogLevel } from "loggily"
 import {
   createRenderer,
   createSearchScrollback,
@@ -1528,6 +1521,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // ========================================================================
   // ANSI Trace: SILVERY_TRACE=1 logs all stdout writes with decoded sequences
   // ========================================================================
+  // The trace is human text on the `silvery:trace` loggily namespace, the
+  // path every silvery diagnostic takes; there is no fixed trace file (31167
+  // A). While a fullscreen app runs, the Output owner activated below holds
+  // these records off the screen: written to DEBUG_LOG when it is set, else
+  // buffered and replayed once the alternate screen is left. Every trace record
+  // is info, not debug: loggily drops debug records outside an ambient DEBUG
+  // filter before any sink, and SILVERY_TRACE=1 must not depend on what DEBUG
+  // names.
   const _ansiTrace = !headless && process.env?.SILVERY_TRACE === "1"
 
   let _traceSeq = 0
@@ -1535,9 +1536,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let _origStdoutWrite: typeof process.stdout.write | undefined
 
   if (_ansiTrace) {
-    const fs = process.getBuiltinModule("node:fs") as typeof import("node:fs")
-    fs.writeFileSync("/tmp/silvery-trace.log", `=== SILVERY TRACE START ===\n`)
-
     _origStdoutWrite = stdout.write.bind(stdout) as typeof stdout.write
 
     const symbolize = (s: string): string =>
@@ -1584,10 +1582,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         decoded.length > 400
           ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
           : decoded
-      fs.appendFileSync(
-        "/tmp/silvery-trace.log",
-        `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
-      )
+      traceLog.info?.(`[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}`)
       return (_origStdoutWrite as Function).call(this, chunk, ...args)
     } as typeof stdout.write
 
@@ -1597,26 +1592,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (_origStdoutWrite) stdout.write = _origStdoutWrite
     })
 
-    // Pipe `silvery:trace`-namespaced loggily records to the trace log file.
-    // The `{ ns: "silvery:trace" }` config routes only that namespace through
-    // the writer — other silvery namespaces (silvery:app, silvery:render,
-    // etc.) don't pollute the file.
-    // Auto-lowers global log level to "debug" when above, so traceLog.debug?.()
-    // banner records actually emit; restored on cleanup.
-    const traceFileWriter = createFileWriter("/tmp/silvery-trace.log")
-    const unsubscribeTraceWriter = addWriter({ ns: "silvery:trace" }, (formatted) =>
-      traceFileWriter.write(formatted),
-    )
-    const _prevLogLevel: LogLevel = getLogLevel()
-    if (_prevLogLevel !== "trace" && _prevLogLevel !== "debug") {
-      setLogLevel("debug")
-    }
+    // Lowers LOG_LEVEL to "debug" while the trace runs, so its records emit
+    // under a quieter level, then restores the value it found (unset stays
+    // unset). Reads the raw variable because getLogLevel() reports debug
+    // whenever DEBUG is set, whatever LOG_LEVEL says.
+    const _prevLogLevelEnv = process.env.LOG_LEVEL
+    const _prevLevelName = _prevLogLevelEnv?.toLowerCase()
+    const _lowerLogLevel = _prevLevelName !== "trace" && _prevLevelName !== "debug"
+    if (_lowerLogLevel) setLogLevel("debug")
     registerProviderCleanup(() => {
-      unsubscribeTraceWriter()
-      traceFileWriter.close()
-      if (_prevLogLevel !== "trace" && _prevLogLevel !== "debug") {
-        setLogLevel(_prevLogLevel)
-      }
+      if (!_lowerLogLevel) return
+      if (_prevLogLevelEnv === undefined) delete process.env.LOG_LEVEL
+      else process.env.LOG_LEVEL = _prevLogLevelEnv
     })
   }
 
@@ -1700,12 +1687,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     : {
         write(frame: string): void {
           if (_perfLog) {
-            process
-              .getBuiltinModule("node:fs")
-              .appendFileSync(
-                "/tmp/silvery-perf.log",
-                `TARGET.write: ${frame.length} bytes (paused=${renderPaused})\n`,
-              )
+            perfLog.debug?.(`TARGET.write: ${frame.length} bytes (paused=${renderPaused})`)
           }
           if (_captureFile) {
             _captureFrame += 1
@@ -3598,7 +3580,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // BEFORE initial render so reconciler effects land on alt screen.
   if (!headless) {
     if (_ansiTrace) {
-      traceLog.debug?.("=== ALT SCREEN + CLEAR ===")
+      // Opens the trace once the Output owner above holds stderr/console, so
+      // it lands with the rest of the trace rather than on the terminal.
+      traceLog.info?.("=== SILVERY TRACE START ===")
+      traceLog.info?.("=== ALT SCREEN + CLEAR ===")
     }
     if (alternateScreen) {
       // Route through modes so the owner tracks state for race-free dispose.
@@ -3621,7 +3606,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // paint, otherwise a resumed transcript can publish an intermediate layout
   // before the startup convergence loop reaches the stable bottom pin.
   if (_ansiTrace) {
-    traceLog.debug?.("=== INITIAL RENDER ===")
+    traceLog.info?.("=== INITIAL RENDER ===")
   }
   isRendering = true
   try {
@@ -3690,9 +3675,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // dropped before the event loop subscribes.
     }
     if (_ansiTrace) {
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync("/tmp/silvery-trace.log", "=== RUNTIME.RENDER (initial) ===\n")
+      traceLog.info?.("=== RUNTIME.RENDER (initial) ===")
     }
     // Settle the deferred-rect convergence BEFORE the first user-visible
     // paintFrame. Each iteration:
@@ -3739,12 +3722,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
   paintFrame()
   if (_perfLog) {
-    process
-      .getBuiltinModule("node:fs")
-      .appendFileSync(
-        "/tmp/silvery-perf.log",
-        `STARTUP: initial render done (render #${renderer.renderCount()}, incremental=${!renderer.isIncrementalOff()})\n`,
-      )
+    perfLog.debug?.(
+      `STARTUP: initial render done (render #${renderer.renderCount()}, incremental=${!renderer.isIncrementalOff()})`,
+    )
   }
 
   // (Output owner is now activated earlier — before alt-screen entry — so
@@ -3979,12 +3959,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (_ansiTrace) {
       const _case = inEventHandler ? "1:event" : isRendering ? "2:rendering" : "3:standalone"
       const stack = new Error().stack?.split("\n").slice(1, 5).join("\n") ?? ""
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync(
-          "/tmp/silvery-trace.log",
-          `=== SUBSCRIPTION (case ${_case}, render #${renderer.renderCount() + 1}) ===\n${stack}\n`,
-        )
+      traceLog.info?.(
+        `=== SUBSCRIPTION (case ${_case}, render #${renderer.renderCount() + 1}) ===\n${stack}`,
+      )
     }
     if (inEventHandler) {
       // During processEvent/press: just flag, caller's flush loop handles it.
@@ -4001,12 +3978,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           pendingRerender = false
           if (!shouldExit && !isRendering) {
             if (_perfLog) {
-              process
-                .getBuiltinModule("node:fs")
-                .appendFileSync(
-                  "/tmp/silvery-perf.log",
-                  `SUBSCRIPTION: deferred microtask render (case 2, render #${renderer.renderCount() + 1})\n`,
-                )
+              perfLog.debug?.(
+                `SUBSCRIPTION: deferred microtask render (case 2, render #${renderer.renderCount() + 1})`,
+              )
             }
             startStandaloneFrame()
           }
@@ -4015,12 +3989,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       return
     }
     if (_perfLog) {
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync(
-          "/tmp/silvery-perf.log",
-          `SUBSCRIPTION: immediate render (case 3, render #${renderer.renderCount() + 1})\n`,
-        )
+      perfLog.debug?.(
+        `SUBSCRIPTION: immediate render (case 3, render #${renderer.renderCount() + 1})`,
+      )
     }
     startStandaloneFrame()
   })
@@ -5206,12 +5177,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const runtimeMs = performance.now() - runtimeStart
     if (_perfLog) {
       const totalMs = performance.now() - _eventStart
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync(
-          "/tmp/silvery-perf.log",
-          `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${renderer.renderCount()} doRender() calls, runtime.render=${runtimeMs.toFixed(1)}ms\n---\n`,
-        )
+      perfLog.debug?.(
+        `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${renderer.renderCount()} doRender() calls, runtime.render=${runtimeMs.toFixed(1)}ms`,
+      )
     }
     // Budget check — warn if batch took longer than one frame (16ms)
     if (_perfSpan) {
@@ -5474,12 +5442,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
         }
         if (_perfLog) {
-          process
-            .getBuiltinModule("node:fs")
-            .appendFileSync(
-              "/tmp/silvery-perf.log",
-              `DRAIN: spins=${drainSpins}, batch=${eventQueue.length}\n`,
-            )
+          perfLog.debug?.(`DRAIN: spins=${drainSpins}, batch=${eventQueue.length}`)
         }
         // Expose diagnostic counters on globalThis for test assertions.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

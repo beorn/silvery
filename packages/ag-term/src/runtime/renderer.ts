@@ -17,7 +17,9 @@
  * intended to be used outside that module (no public barrel export).
  */
 
+import { createLogger } from "loggily"
 import { writeDumpFile } from "./dump-file"
+import { perfLog } from "./perf"
 import { reconciler, getContainerRoot } from "@silvery/ag-react/reconciler"
 import { createAg, type Ag } from "../ag"
 import { runWithMeasurer } from "../unicode"
@@ -81,6 +83,9 @@ type Scrollback = ReturnType<typeof createVirtualScrollback>
 type Container = ReturnType<typeof createContainer>
 type FiberRoot = ReturnType<typeof createFiberRoot>
 type SearchState = ReturnType<typeof createSearchState>
+
+/** SILVERY_TRACE=1 doRender markers — the same namespace as createApp's decoded write trace. */
+const traceLog = createLogger("silvery:trace")
 
 /**
  * Count all nodes in an AgNode subtree (inclusive of `root`). Used only by
@@ -271,9 +276,9 @@ export interface RendererOptions {
   cellDebug: { x: number; y: number } | null
   /** True iff any diagnostic flag is on (STRICT_MODE || cellDebug). */
   instrumented: boolean
-  /** SILVERY_TRACE_ANSI — writes step-by-step ANSI traces to /tmp. */
+  /** SILVERY_TRACE=1 — doRender markers as `silvery:trace` loggily records. */
   ansiTrace: boolean
-  /** Shared perfLog flag — writes render timings to /tmp/silvery-perf.log. */
+  /** DEBUG includes silvery:perf — render timings as `silvery:perf` loggily records. */
   perfLog: boolean
 }
 
@@ -325,12 +330,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
   function doRender(): Buffer {
     _renderCount++
     if (opts.ansiTrace) {
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync(
-          "/tmp/silvery-trace.log",
-          `--- doRender #${_renderCount} (ag=${_ag ? "reuse" : "create"}, incremental=${!opts.noIncremental}) ---\n`,
-        )
+      traceLog.info?.(
+        `--- doRender #${_renderCount} (ag=${_ag ? "reuse" : "create"}, incremental=${!opts.noIncremental}) ---`,
+      )
     }
     const renderStart = performance.now()
 
@@ -740,12 +742,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
         }
       }
       if (opts.perfLog) {
-        process
-          .getBuiltinModule("node:fs")
-          .appendFileSync(
-            "/tmp/silvery-perf.log",
-            `SILVERY_STRICT (createApp): render #${_renderCount} OK\n`,
-          )
+        perfLog.debug?.(`SILVERY_STRICT (createApp): render #${_renderCount} OK`)
       }
     }
 
@@ -784,12 +781,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
       const detailStr = detail
         ? ` {visited=${detail.nodesVisited} rendered=${detail.nodesRendered} skipped=${detail.nodesSkipped} noPrev=${detail.noPrevBuffer ?? 0} dirty=${detail.flagContentDirty ?? 0} paint=${detail.flagStylePropsDirty ?? 0} layoutChg=${detail.flagLayoutChanged ?? 0} subtree=${detail.flagSubtreeDirty ?? 0} children=${detail.flagChildrenDirty ?? 0} childPos=${detail.flagChildPositionChanged ?? 0} scroll=${detail.scrollContainerCount ?? 0}/${detail.scrollViewportCleared ?? 0}${detail.scrollClearReason ? `(${detail.scrollClearReason})` : ""}}${detail.cascadeNodes ? ` CASCADE[minDepth=${detail.cascadeMinDepth} ${detail.cascadeNodes}]` : ""}`
         : ""
-      process
-        .getBuiltinModule("node:fs")
-        .appendFileSync(
-          "/tmp/silvery-perf.log",
-          `doRender #${_renderCount}: ${renderDuration.toFixed(1)}ms (reconcile=${reconcileMs.toFixed(1)}ms pipeline=${pipelineMs.toFixed(1)}ms ${dims.cols}x${dims.rows})${phaseStr}${detailStr}\n`,
-        )
+      perfLog.debug?.(
+        `doRender #${_renderCount}: ${renderDuration.toFixed(1)}ms (reconcile=${reconcileMs.toFixed(1)}ms pipeline=${pipelineMs.toFixed(1)}ms ${dims.cols}x${dims.rows})${phaseStr}${detailStr}`,
+      )
     }
 
     // Phase 4 (Visual Eyes epic): emit a RENDER_DISPATCHED event at the

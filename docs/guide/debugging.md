@@ -111,9 +111,17 @@ DEBUG=silvery:measure DEBUG_LOG=/tmp/silvery.log bun run app
 # Component lifecycle stream (mount/update/unmount with compact identifying props)
 DEBUG=silvery:mount DEBUG_LOG=/tmp/silvery.log bun run app
 
+# Decoded trace of every stdout write, plus doRender/subscription markers
+SILVERY_TRACE=1 DEBUG_LOG=/tmp/silvery.log bun run app
+
+# Per-frame and per-event render timings
+DEBUG=silvery:perf DEBUG_LOG=/tmp/silvery.log bun run app
+
 # Instrumentation counters (enables stats collection, also exposed on globalThis)
 SILVERY_INSTRUMENT=1 bun run app
 ```
+
+While a fullscreen app runs, its output guard keeps these records off the screen: they go to `DEBUG_LOG` when it is set, and are otherwise printed after the app exits. An inline app leaves stderr alone, so redirect it (`2>silvery.log`) instead.
 
 #### Loggily Namespace Reference
 
@@ -129,6 +137,9 @@ SILVERY_INSTRUMENT=1 bun run app
 | `silvery:flicker`       | Repaint-storm monitor (PANIC on fast repeated destructive clears; frame dumps)  |
 | `silvery:cursor`        | Hardware-cursor target vs replayed terminal cursor diagnostics                  |
 | `silvery:mem`           | In-process heap poll (30s `process.memoryUsage()` samples + WARN on doubling)   |
+| `silvery:trace`         | `SILVERY_TRACE=1`: decoded stdout writes, doRender and subscription markers     |
+| `silvery:perf`          | `DEBUG=silvery:perf`: per-frame and per-event render timings                    |
+| `silvery:output`        | Output-phase diff, size and `SILVERY_DEBUG_CAPTURE` status lines                |
 | `@silvery/ag-react`     | React reconciler pipeline spans                                                 |
 
 ### Enriched STRICT Errors
