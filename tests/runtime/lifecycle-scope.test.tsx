@@ -391,7 +391,7 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
     }
   })
 
-  test("pre-handle failures roll back the crash-record registration and the root scope", () => {
+  test("pre-handle failures remove the crash record through cleanup() and roll back the root scope", () => {
     const dumpDir = mkdtempSync(join(tmpdir(), "silvery-rollback-test-"))
     const source = String.raw`
       import React from "react"

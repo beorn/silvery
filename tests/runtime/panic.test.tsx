@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { Box, Text, useRuntime } from "../../src/index.js"
 import { createApp, recordAppCrash } from "../../src/runtime.js"
 import { run, usePanic } from "../../packages/ag-term/src/runtime/run"
+import { createTerm } from "../../packages/ag-term/src/index"
 
 const settle = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -391,55 +392,91 @@ describe("recordAppCrash()", () => {
     expect(readdirSync(dumpDir)).toHaveLength(2)
   })
 
-  test("a crash while startup awaits the Kitty probe: no later mode enable, paint or startup completion", async () => {
-    const started = Promise.resolve(
-      createApp(() => () => ({})).run(<Text>probe</Text>, {
-        ...(options(loggedStdout("out")) as object),
-        alternateScreen: true,
-        kitty: true,
-        mouse: true,
-      } as never),
-    )
-    await settle(30)
-    // Startup is parked on the probe: its query is out, the 200 ms answer window is still open.
-    expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?u"))).toBe(true)
-
-    recordAppCrash(new Error("probe boom"))
-    const settledLength = log.length
-
-    expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))).toBe(true)
-    // The probe window closes inside this wait; startup must not resume past it.
-    expect(await stillPending(started, 400)).toBe(true)
-    expect(log.slice(settledLength)).toEqual([])
-    expect(log.some((line) => line.includes("\x1b[?1003h"))).toBe(false)
-  })
-
-  test("a crash during the first render: no protocol enable, no paint, startup never completes", async () => {
-    function CrashOnMount() {
-      useLayoutEffect(() => {
-        recordAppCrash(new Error("mount boom"))
-      }, [])
-      return <Text>mount</Text>
+  // Both terminal setups: an app that owns its Modes (the crash cleanup disposes them, and a disposed Modes drops
+  // writes) and an injected Term, which the entries pass (dutiful: createTerm()) and whose Modes the crash cleanup
+  // leaves live. Only the second shows a missing startup guard as a mode enable after the report (@dev/review2).
+  const startupOptions = (setup: string, stdout: NodeJS.WriteStream) => {
+    const base = options(stdout) as unknown as {
+      stdin: NodeJS.ReadStream
+      cols: number
+      rows: number
     }
-    const started = Promise.resolve(
-      createApp(() => () => ({})).run(<CrashOnMount />, {
-        ...(options(loggedStdout("out")) as object),
-        alternateScreen: true,
-        mouse: true,
-      } as never),
-    )
+    return setup === "injected Term"
+      ? ({
+          ...base,
+          term: createTerm({
+            stdout,
+            stdin: base.stdin,
+            cols: base.cols,
+            rows: base.rows,
+          } as never),
+        } as never)
+      : (base as never)
+  }
+  for (const setup of ["app-owned Modes", "injected Term"]) {
+    test(`a crash while startup awaits the Kitty probe: no later mode enable, paint or startup completion (${setup})`, async () => {
+      const started = Promise.resolve(
+        createApp(() => () => ({})).run(<Text>probe</Text>, {
+          ...(startupOptions(setup, loggedStdout("out")) as object),
+          alternateScreen: true,
+          kitty: true,
+          mouse: true,
+        } as never),
+      )
+      await settle(30)
+      // Startup is parked on the probe: its query is out, the 200 ms answer window is still open.
+      expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?u"))).toBe(true)
 
-    expect(await stillPending(started, 150)).toBe(true)
-    const restore = log.findIndex((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))
-    // The report is recordAppCrash's last write: nothing follows it.
-    const report = log.findIndex(
-      (line) => line.startsWith("err:") && line.includes("process crash: mount boom"),
-    )
-    expect(restore).toBeGreaterThanOrEqual(0)
-    expect(report).toBeGreaterThan(restore)
-    expect(log.slice(report + 1)).toEqual([])
-    expect(log.some((line) => line.includes("\x1b[?1003h"))).toBe(false)
-  })
+      const beforeCrash = log.length
+      recordAppCrash(new Error("probe boom"))
+      const settledLength = log.length
+
+      expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))).toBe(true)
+      // The probe window closes inside this wait; startup must not resume past it.
+      expect(await stillPending(started, 400)).toBe(true)
+      expect(log.slice(settledLength)).toEqual([])
+      // An injected Term enables mouse tracking before the probe: the restore turns it off, and nothing after the
+      // crash call turns it on again.
+      const lastEnable = log.findLastIndex((line) => line.includes("\x1b[?1003h"))
+      expect(lastEnable).toBeLessThan(beforeCrash)
+      if (lastEnable >= 0) {
+        expect(
+          log
+            .slice(beforeCrash)
+            .some((line) => line.startsWith("out:") && line.includes("\x1b[?1003l")),
+        ).toBe(true)
+      }
+    })
+
+    test(`a crash during the first render: no protocol enable, no paint, startup never completes (${setup})`, async () => {
+      function CrashOnMount() {
+        useLayoutEffect(() => {
+          recordAppCrash(new Error("mount boom"))
+        }, [])
+        return <Text>mount</Text>
+      }
+      const started = Promise.resolve(
+        createApp(() => () => ({})).run(<CrashOnMount />, {
+          ...(startupOptions(setup, loggedStdout("out")) as object),
+          alternateScreen: true,
+          mouse: true,
+        } as never),
+      )
+
+      expect(await stillPending(started, 150)).toBe(true)
+      const restore = log.findIndex(
+        (line) => line.startsWith("out:") && line.includes("\x1b[?1049l"),
+      )
+      // The report is recordAppCrash's last write: nothing follows it.
+      const report = log.findIndex(
+        (line) => line.startsWith("err:") && line.includes("process crash: mount boom"),
+      )
+      expect(restore).toBeGreaterThanOrEqual(0)
+      expect(report).toBeGreaterThan(restore)
+      expect(log.slice(report + 1)).toEqual([])
+      expect(log.some((line) => line.includes("\x1b[?1003h"))).toBe(false)
+    })
+  }
 
   test("with no live app it is a no-op", () => {
     const exitCode = process.exitCode

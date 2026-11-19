@@ -10,14 +10,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - `silvery/pipe`: the one composition primitive (`pipe` + `AppPlugin`, implemented once in `@silvery/create/pipe`) is now a standalone published subpath. It imports nothing, so a consumer outside Silvery's app surface can pin it by exact version and compose values without importing the app barrel or any UI dependency. Overloads now cover up to twelve plugins. (32325 Slice A)
+- `recordAppCrash(error, { title? })` from `silvery/runtime`. It records a process crash for every live interactive app, newest first: a report with a dump, the terminal restore and exit code 1. Each stage is attempted even when an earlier one throws, and the first failure is rethrown. Each crash-stopped app writes nothing more and never completes. It never exits the process; pass it as `restore` to the entry's one crash handler (loggily `installCrashHandler`). (31167)
 
 ### Changed
 
+- **Breaking for entries that relied on it:** `run()` and `createApp` no longer register process `uncaughtException` or `unhandledRejection` listeners. A process crash restores the terminal only if the entry installs one crash handler with `recordAppCrash` as its restore, for example `using _crash = installCrashHandler({ logger, restore: recordAppCrash })` around the app's lifetime. Without one, an uncaught error ends the process with the runtime's default output and the terminal left as it was. (31167)
 - `silvery` now declares `react-devtools-core` and `ws` as optional peer dependencies, so the DevTools backend is no longer copied into the published tarball. An app that wants DevTools installs both itself (`bun add -d react-devtools-core ws`); an app that never requests DevTools is unaffected, because ordinary rendering loads neither peer and `connectDevTools()` returns `false` with a warning only when DevTools is explicitly enabled.
 - Diagnostic text no longer goes to fixed files in `/tmp`. `SILVERY_TRACE=1`, `DEBUG=silvery:perf`, `SILVERY_DEBUG_OUTPUT` or `SILVERY_STRICT_ACCUMULATE`, and `SILVERY_DEBUG_CAPTURE` used to append to `/tmp/silvery-trace.log`, `/tmp/silvery-perf.log`, `/tmp/silvery-sizes.log` and `/tmp/silvery-capture.log`. The same flags now log that text on the `silvery:trace`, `silvery:perf` and `silvery:output` namespaces. A fullscreen app writes these records to `DEBUG_LOG` when it is set and otherwise prints them after it exits. The raw ANSI files written by `SILVERY_CAPTURE_RAW`, and by `SILVERY_DEBUG_CAPTURE` on a mismatch, are unchanged.
 
 ### Fixed
 
+- Two incident dumps written in the same millisecond no longer overwrite each other: the second gets a `-1`, `-2`, … suffix, so each report names its own file.
 - `connectDevTools()` now initializes under Node. The backend reads a web-worker global that Node does not define, so the call failed before it could start; Bun was unaffected because it defines that global.
 
 ## [0.29.3] - 2026-11-14

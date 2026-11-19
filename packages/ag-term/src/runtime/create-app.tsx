@@ -2712,7 +2712,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   function applyFocusedIslandProtocolModes(reason: string): void {
-    if (headless) return
+    // After a crash-stop the restore owns the terminal: the crash cleanup's unmount removes nodes, and re-deriving the
+    // modes here would re-enable mouse tracking on a Term-owned (still live) Modes just before the reset.
+    if (headless || crashStopped) return
     syncIslandModeSubscriptions()
     syncFocusedIslandState(focusManager.activeElement)
     const aggregated = deriveProtocolModesFromFocusSubtree(focusManager.activeElement)
@@ -3173,38 +3175,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     })()
   }
 
-  // Process crashes are owned by the process entry's one crash handler (ADR-0031 decision 3, #31167); silvery registers
-  // no process listener. A live interactive app joins the private set recordAppCrash walks, for the lifetime its
-  // process listeners had: from here until cleanup() or the startup rollback.
-  if (!headless) {
-    const recorder: AppCrashRecorder = (error, title) => {
-      if (crashStopped) return
-      crashStopped = true
-      shouldExit = true
-      // Each stage is attempted even when an earlier one throws, so a failed record never skips this app's restore.
-      const failures: unknown[] = []
-      const stage = (step: () => void): void => {
-        try {
-          step()
-        } catch (err) {
-          failures.push(err)
-        }
-      }
-      stage(disableInteractiveProtocolsEarly)
-      // exitCode 1 also holds at the dump cap; the process exit itself belongs to the entry's crash handler, never to
-      // panicApp's exit(2) branch, which this path does not reach.
-      stage(() => recordPanic(error, { title, exitCode: 1 }))
-      stage(() => cleanup(failures))
-      if (failures.length > 0) throw failures[0]
-    }
-    appCrashRecorder = recorder
-    liveAppCrashRecorders.add(recorder)
-    registerStartupCleanup(() => {
-      liveAppCrashRecorders.delete(recorder)
-      if (appCrashRecorder === recorder) appCrashRecorder = null
-    })
-  }
-
   const standaloneFrameTasks = new Set<Promise<void>>()
   const startStandaloneFrame = (): void => {
     // Native processing can clear isRendering while a standalone frame awaits
@@ -3303,6 +3273,35 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   startupCleanup = cleanup
   startupResourcesTransferred = true
   startupResources.dispose()
+
+  // Process crashes are owned by the process entry's one crash handler (ADR-0031 decision 3, #31167); silvery registers
+  // no process listener. A live interactive app joins the private set recordAppCrash walks from the cleanup handoff
+  // above until cleanup() removes it; every later failure, the startup rollback's included, runs cleanup(). The
+  // setup before the handoff is synchronous, and a process crash arrives on a later turn, so it needs no record.
+  if (!headless) {
+    const recorder: AppCrashRecorder = (error, title) => {
+      if (crashStopped) return
+      crashStopped = true
+      shouldExit = true
+      // Each stage is attempted even when an earlier one throws, so a failed record never skips this app's restore.
+      const failures: unknown[] = []
+      const stage = (step: () => void): void => {
+        try {
+          step()
+        } catch (err) {
+          failures.push(err)
+        }
+      }
+      stage(disableInteractiveProtocolsEarly)
+      // exitCode 1 also holds at the dump cap; the process exit itself belongs to the entry's crash handler, never to
+      // panicApp's exit(2) branch, which this path does not reach.
+      stage(() => recordPanic(error, { title, exitCode: 1 }))
+      stage(() => cleanup(failures))
+      if (failures.length > 0) throw failures[0]
+    }
+    appCrashRecorder = recorder
+    liveAppCrashRecorders.add(recorder)
+  }
 
   // Track current buffer for text access
   let currentBuffer: Buffer
