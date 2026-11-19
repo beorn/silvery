@@ -87,9 +87,18 @@ export function writeDumpFile(kind: DumpKind, contents: string): string | undefi
   try {
     const dir = dumpDir()
     mkdirSync(dir, { recursive: true })
-    const path = `${dir}/silvery-${kind}-${Date.now()}.txt`
-    writeFileSync(path, contents)
-    return path
+    const stamp = Date.now()
+    // Exclusive create: two dumps in one millisecond (recordAppCrash records every live app in one call) must not
+    // overwrite each other and leave the first report naming the second app's file.
+    for (let attempt = 0; ; attempt++) {
+      const path = `${dir}/silvery-${kind}-${stamp}${attempt === 0 ? "" : `-${attempt}`}.txt`
+      try {
+        writeFileSync(path, contents, { flag: "wx" })
+        return path
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST" || attempt >= 99) throw error
+      }
+    }
   } catch {
     return undefined
   }

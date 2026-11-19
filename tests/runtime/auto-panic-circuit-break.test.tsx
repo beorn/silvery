@@ -19,7 +19,7 @@
  * Bead: @km/silvery/auto-panic-circuit-break.
  */
 
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
@@ -234,5 +234,65 @@ describe("auto-panic circuit-break", () => {
     const visible = stderr.join("")
     const circuitBreakLines = visible.match(/\[silvery\] auto-panic circuit-break/g) ?? []
     expect(circuitBreakLines.length).toBe(1)
+  })
+
+  test("recordAppCrash at the dump cap keeps exit code 1, writes no extra dump and never exits", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "silvery-crash-cap-"))
+    try {
+      vi.stubEnv("SILVERY_AUTO_PANIC_MAX_DUMPS", "1")
+      vi.stubEnv("SILVERY_DUMP_DIR", dir)
+      vi.resetModules()
+      const { run: capRun } = await import("../../packages/ag-term/src/runtime/run")
+      const { recordAppCrash } = await import("../../packages/ag-term/src/runtime/create-app")
+      const { Text: CapText } = await import("../../src/index.js")
+      const options = {
+        cols: 40,
+        rows: 10,
+        stdin: createMockStdin(),
+        guardOutput: true,
+        kitty: false,
+        textSizing: false,
+        widthDetection: false,
+      }
+      const first = await capRun(<CapText>one</CapText>, {
+        ...options,
+        stdout: createMockStdout().writable,
+      } as never)
+      const second = await capRun(<CapText>two</CapText>, {
+        ...options,
+        stdout: createMockStdout().writable,
+      } as never)
+
+      // The newest app records first and takes the one allowed dump; the other reaches the cap.
+      recordAppCrash(new Error("capped crash"))
+
+      expect(stderr.join("")).toContain("[silvery] auto-panic circuit-break")
+      expect(readdirSync(dir).filter((name) => name.startsWith("silvery-panic-"))).toHaveLength(1)
+      expect(process.exitCode).toBe(1)
+      expect(exitSpy).not.toHaveBeenCalled()
+      first.unmount()
+      second.unmount()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("two dumps in one millisecond keep separate files", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "silvery-dump-collision-"))
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000)
+    try {
+      vi.stubEnv("SILVERY_DUMP_DIR", dir)
+      const { writeDumpFile } = await import("../../packages/ag-term/src/runtime/dump-file")
+      const first = writeDumpFile("panic", "first app")
+      const second = writeDumpFile("panic", "second app")
+      expect(first).toBeDefined()
+      expect(second).toBeDefined()
+      expect(second).not.toBe(first)
+      expect(readFileSync(first!, "utf8")).toBe("first app")
+      expect(readFileSync(second!, "utf8")).toBe("second app")
+    } finally {
+      now.mockRestore()
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

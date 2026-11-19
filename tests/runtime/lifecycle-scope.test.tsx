@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk <fixture-only: the startup-rollback case lists its own temporary SILVERY_DUMP_DIR>
  * Runtime integration — `@silvery/scope` wired into createApp/run.
  *
  * Bead: km-silvery.lifecycle-scope (Phase 1).
@@ -25,7 +26,9 @@
 
 import React, { useEffect, useState } from "react"
 import { spawnSync } from "node:child_process"
-import { resolve } from "node:path"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join, resolve } from "node:path"
 import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
 import { Box, Text } from "../../src/index.js"
@@ -388,10 +391,12 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
     }
   })
 
-  test("pre-handle failures roll back process listeners and the root scope", () => {
+  test("pre-handle failures roll back the crash-record registration and the root scope", () => {
+    const dumpDir = mkdtempSync(join(tmpdir(), "silvery-rollback-test-"))
     const source = String.raw`
       import React from "react"
-      import { createApp } from "./packages/ag-term/src/runtime/create-app.tsx"
+      import { readdirSync } from "node:fs"
+      import { createApp, recordAppCrash } from "./packages/ag-term/src/runtime/create-app.tsx"
       import { getTraceSnapshot } from "./packages/scope/src/index.ts"
 
       const before = {
@@ -416,6 +421,8 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
         sigterm: process.listenerCount("SIGTERM"),
       }
 
+      // Startup fails after the app joined recordAppCrash's live set: the cursor-hide write at alternate-screen
+      // entry throws. The rollback must take the app out of that set, so a later crash records nothing for it.
       const handoffBefore = {
         resize: process.stdout.listenerCount("resize"),
         sigint: process.listenerCount("SIGINT"),
@@ -423,12 +430,11 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
         uncaught: process.listenerCount("uncaughtException"),
         unhandled: process.listenerCount("unhandledRejection"),
       }
-      const originalOn = process.on
+      const originalWrite = process.stdout.write
       let handoffError: unknown
-      process.on = function (event, listener) {
-        const result = originalOn.call(this, event, listener)
-        if (event === "uncaughtException") throw new Error("process-on-boom")
-        return result
+      process.stdout.write = function (chunk, ...rest) {
+        if (String(chunk).includes("\x1b[?25l")) throw new Error("cursor-hide-boom")
+        return originalWrite.call(this, chunk, ...rest)
       }
       try {
         await createApp(() => () => ({})).run(React.createElement(React.Fragment), {
@@ -438,7 +444,7 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
       } catch (error) {
         handoffError = error
       } finally {
-        process.on = originalOn
+        process.stdout.write = originalWrite
       }
       const handoffAfter = {
         resize: process.stdout.listenerCount("resize"),
@@ -447,7 +453,20 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
         uncaught: process.listenerCount("uncaughtException"),
         unhandled: process.listenerCount("unhandledRejection"),
       }
-      console.log(JSON.stringify({
+      const stderrSeen = []
+      const originalStderrWrite = process.stderr.write
+      process.stderr.write = function (chunk, ...rest) {
+        stderrSeen.push(String(chunk))
+        return originalStderrWrite.call(this, chunk, ...rest)
+      }
+      recordAppCrash(new Error("post-rollback-probe"))
+      process.stderr.write = originalStderrWrite
+      const postRollback = {
+        reported: stderrSeen.some((line) => line.includes("post-rollback-probe")),
+        dumps: readdirSync(process.env.SILVERY_DUMP_DIR).length,
+      }
+      // The rollback restored the terminal on this same stdout, without a trailing newline: start the record on its own line.
+      console.log("\n" + JSON.stringify({
         factory: { message, before, after },
         handoff: {
           name: handoffError?.constructor?.name,
@@ -455,14 +474,16 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
           before: handoffBefore,
           after: handoffAfter,
         },
+        postRollback,
         scopes: getTraceSnapshot().map(({ kind, name }) => ({ kind, name })),
       }))
     `
     const result = spawnSync("bun", ["-e", source], {
       cwd: silveryRoot,
       encoding: "utf8",
-      env: { ...process.env, SILVERY_SCOPE_TRACE: "1" },
+      env: { ...process.env, SILVERY_SCOPE_TRACE: "1", SILVERY_DUMP_DIR: dumpDir },
     })
+    rmSync(dumpDir, { recursive: true, force: true })
 
     expect(result.status, result.stderr).toBe(0)
     const record = JSON.parse(
@@ -482,13 +503,15 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
         before?: Record<string, number>
         after?: Record<string, number>
       }
+      postRollback?: { reported: boolean; dumps: number }
       scopes?: Array<{ kind: string; name?: string }>
     }
     expect(record.factory?.message).toBe("factory-boom-live")
     expect(record.factory?.after).toEqual(record.factory?.before)
     expect(record.handoff?.name).toBe("Error")
-    expect(record.handoff?.message).toBe("process-on-boom")
+    expect(record.handoff?.message).toBe("cursor-hide-boom")
     expect(record.handoff?.after).toEqual(record.handoff?.before)
+    expect(record.postRollback).toEqual({ reported: false, dumps: 0 })
     expect(record.scopes).toEqual([])
   })
 

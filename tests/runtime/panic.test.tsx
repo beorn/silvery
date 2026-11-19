@@ -1,7 +1,15 @@
-import React, { useEffect } from "react"
-import { afterEach, beforeEach, describe, expect, test } from "vitest"
-import { Box, Text } from "../../src/index.js"
-import { run, usePanic, type RunHandle } from "../../packages/ag-term/src/runtime/run"
+/**
+ * @reach fs-walk <fixture-only: recordAppCrash cases list their own temporary SILVERY_DUMP_DIR>
+ * Panic and process-crash records: handle.panic, usePanic, and recordAppCrash (#31167).
+ */
+import { mkdtempSync, readdirSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import React, { useEffect, useLayoutEffect } from "react"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import { Box, Text, useRuntime } from "../../src/index.js"
+import { createApp, recordAppCrash } from "../../src/runtime.js"
+import { run, usePanic } from "../../packages/ag-term/src/runtime/run"
 
 const settle = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -197,80 +205,221 @@ describe("panic()", () => {
     expect(stdin.readLog).toContain(lateModeReplies)
     expect(stdin.rawModes.at(-1)).toBe(false)
   })
+})
 
-  test("process uncaughtException routes through panic and unregisters on cleanup", async () => {
-    const before = process.listeners("uncaughtException")
-    const { writable: stdout, written } = createMockStdout()
-    let handle: RunHandle | null = null
+/**
+ * recordAppCrash is how a process entry's one crash handler (loggily installCrashHandler) reaches every live app
+ * (ADR-0031 decision 3, #31167). silvery registers no process listener of its own.
+ */
+describe("recordAppCrash()", () => {
+  let origStderrWrite: typeof process.stderr.write
+  let origStdoutWrite: typeof process.stdout.write
+  let origExitCode: typeof process.exitCode
+  let log: string[]
+  let dumpDir: string
+  const handles: Array<{ unmount(): void }> = []
 
-    try {
-      handle = await run(<Text>ready</Text>, {
-        cols: 40,
-        rows: 10,
-        stdout,
-        stdin: createMockStdin(),
-        guardOutput: true,
-        kitty: false,
-        textSizing: false,
-        widthDetection: false,
-      } as never)
-
-      const added = process
-        .listeners("uncaughtException")
-        .filter((listener) => !before.includes(listener))
-      expect(added).toHaveLength(1)
-
-      added[0]?.(new Error("process boom"), "uncaughtException")
-      await handle.waitUntilExit()
-      handle = null
-
-      const visible = stderr.join("")
-      expect(written.join("")).toContain("\x1b[?1049l")
-      expect(visible).toContain("uncaughtException: process boom")
-      expect(process.listeners("uncaughtException")).toEqual(before)
-    } finally {
-      handle?.unmount()
-      for (const listener of process.listeners("uncaughtException")) {
-        if (!before.includes(listener)) process.off("uncaughtException", listener)
-      }
-    }
+  beforeEach(() => {
+    log = []
+    origExitCode = process.exitCode
+    origStderrWrite = process.stderr.write
+    origStdoutWrite = process.stdout.write
+    process.exitCode = undefined
+    process.stderr.write = ((chunk: unknown) => {
+      log.push(`err:${typeof chunk === "string" ? chunk : String(chunk)}`)
+      return true
+    }) as typeof process.stderr.write
+    process.stdout.write = ((_chunk: unknown) => true) as typeof process.stdout.write
+    dumpDir = mkdtempSync(join(tmpdir(), "silvery-crash-test-"))
+    vi.stubEnv("SILVERY_DUMP_DIR", dumpDir)
   })
 
-  test("process unhandledRejection routes through panic and unregisters on cleanup", async () => {
-    const before = process.listeners("unhandledRejection")
-    const { writable: stdout, written } = createMockStdout()
-    let handle: RunHandle | null = null
+  afterEach(() => {
+    for (const handle of handles.splice(0)) handle.unmount()
+    process.stderr.write = origStderrWrite
+    process.stdout.write = origStdoutWrite
+    process.exitCode = origExitCode
+    vi.unstubAllEnvs()
+    rmSync(dumpDir, { recursive: true, force: true })
+  })
 
-    try {
-      handle = await run(<Text>ready</Text>, {
-        cols: 40,
-        rows: 10,
-        stdout,
-        stdin: createMockStdin(),
-        guardOutput: true,
-        kitty: false,
-        textSizing: false,
-        widthDetection: false,
-      } as never)
+  /** A terminal whose writes land in the shared log, so stdout and stderr order is one sequence. */
+  function loggedStdout(tag: string): NodeJS.WriteStream {
+    const { writable } = createMockStdout()
+    writable.write = ((data: string | Uint8Array) => {
+      log.push(`${tag}:${typeof data === "string" ? data : Buffer.from(data).toString("utf8")}`)
+      return true
+    }) as typeof writable.write
+    return writable
+  }
 
-      const added = process
-        .listeners("unhandledRejection")
-        .filter((listener) => !before.includes(listener))
-      expect(added).toHaveLength(1)
+  const options = (stdout: NodeJS.WriteStream) =>
+    ({
+      cols: 40,
+      rows: 10,
+      stdout,
+      stdin: createMockStdin(),
+      guardOutput: true,
+      kitty: false,
+      textSizing: false,
+      widthDetection: false,
+    }) as never
 
-      added[0]?.("reject boom", Promise.resolve())
-      await handle.waitUntilExit()
-      handle = null
+  const PENDING = Symbol("pending")
+  const stillPending = async (promise: Promise<unknown>, ms = 80) =>
+    (await Promise.race([promise.then(() => "settled"), settle(ms).then(() => PENDING)])) ===
+    PENDING
 
-      const visible = stderr.join("")
-      expect(written.join("")).toContain("\x1b[?1049l")
-      expect(visible).toContain("unhandledRejection: reject boom")
-      expect(process.listeners("unhandledRejection")).toEqual(before)
-    } finally {
-      handle?.unmount()
-      for (const listener of process.listeners("unhandledRejection")) {
-        if (!before.includes(listener)) process.off("unhandledRejection", listener)
-      }
+  test("records, restores, then reports; adds no process listener; the stopped app never paints or finishes", async () => {
+    const before = {
+      uncaught: process.listeners("uncaughtException"),
+      unhandled: process.listeners("unhandledRejection"),
     }
+    let runtime: ReturnType<typeof useRuntime> = null
+    function Probe() {
+      runtime = useRuntime()
+      return <Text>ready</Text>
+    }
+    const handle = await run(<Probe />, options(loggedStdout("out")))
+    handles.push(handle)
+    expect(process.listeners("uncaughtException")).toEqual(before.uncaught)
+    expect(process.listeners("unhandledRejection")).toEqual(before.unhandled)
+
+    recordAppCrash(new Error("process boom"))
+
+    const restore = log.findIndex((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))
+    const report = log.findIndex(
+      (line) => line.startsWith("err:") && line.includes("process crash: process boom"),
+    )
+    expect(restore).toBeGreaterThanOrEqual(0)
+    expect(report).toBeGreaterThan(restore)
+    expect(readdirSync(dumpDir).filter((name) => name.startsWith("silvery-panic-"))).toHaveLength(1)
+    expect(process.exitCode).toBe(1)
+
+    // Crash-stopped: a resume, a pause and a second call write nothing; normal completion never arrives.
+    const settledLength = log.length
+    runtime!.resume?.()
+    runtime!.pause?.()
+    recordAppCrash(new Error("second call"))
+    expect(await stillPending(handle.waitUntilExit())).toBe(true)
+    expect(log.slice(settledLength)).toEqual([])
+    expect(readdirSync(dumpDir)).toHaveLength(1)
+  })
+
+  test("an already-waiting and a later frame consumer stay pending after the crash", async () => {
+    const app = createApp(() => () => ({}))
+    const handle = await app.run(<Text>frames</Text>, options(loggedStdout("out")))
+    handles.push(handle)
+    const frames = handle[Symbol.asyncIterator]()
+    const waiting = frames.next()
+
+    recordAppCrash(new Error("frame boom"))
+
+    const settledLength = log.length
+    expect(await stillPending(waiting)).toBe(true)
+    expect(await stillPending(frames.next())).toBe(true)
+    expect(await stillPending(handle.waitUntilExit())).toBe(true)
+    expect(log.slice(settledLength)).toEqual([])
+  })
+
+  test("one call records and restores every live app, and a throwing stage still restores each app", async () => {
+    const first = await run(<Text>one</Text>, options(loggedStdout("one")))
+    const second = await run(<Text>two</Text>, options(loggedStdout("two")))
+    handles.push(first, second)
+
+    // A record stage that genuinely throws: reading the error's stack fails inside recordPanic.
+    const hostile = new Error("hostile")
+    Object.defineProperty(hostile, "stack", {
+      get() {
+        throw new Error("stack getter boom")
+      },
+    })
+    expect(() => recordAppCrash(hostile)).toThrow("stack getter boom")
+
+    for (const tag of ["one", "two"]) {
+      expect(log.some((line) => line.startsWith(`${tag}:`) && line.includes("\x1b[?1049l"))).toBe(
+        true,
+      )
+    }
+    // Both apps are now crash-stopped: a later call is a no-op for each.
+    const settledLength = log.length
+    recordAppCrash(new Error("after"))
+    expect(log.slice(settledLength)).toEqual([])
+  })
+
+  test("two live apps: each gets its own record and restore", async () => {
+    const first = await run(<Text>one</Text>, options(loggedStdout("one")))
+    const second = await run(<Text>two</Text>, options(loggedStdout("two")))
+    handles.push(first, second)
+
+    recordAppCrash(new Error("shared boom"), { title: "worker" })
+
+    for (const tag of ["one", "two"]) {
+      expect(log.some((line) => line.startsWith(`${tag}:`) && line.includes("\x1b[?1049l"))).toBe(
+        true,
+      )
+    }
+    expect(
+      log.filter((line) => line.startsWith("err:") && line.includes("worker: shared boom")),
+    ).toHaveLength(2)
+    expect(readdirSync(dumpDir)).toHaveLength(2)
+  })
+
+  test("a crash while startup awaits the Kitty probe: no later mode enable, paint or startup completion", async () => {
+    const started = Promise.resolve(
+      createApp(() => () => ({})).run(<Text>probe</Text>, {
+        ...(options(loggedStdout("out")) as object),
+        alternateScreen: true,
+        kitty: true,
+        mouse: true,
+      } as never),
+    )
+    await settle(30)
+    // Startup is parked on the probe: its query is out, the 200 ms answer window is still open.
+    expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?u"))).toBe(true)
+
+    recordAppCrash(new Error("probe boom"))
+    const settledLength = log.length
+
+    expect(log.some((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))).toBe(true)
+    // The probe window closes inside this wait; startup must not resume past it.
+    expect(await stillPending(started, 400)).toBe(true)
+    expect(log.slice(settledLength)).toEqual([])
+    expect(log.some((line) => line.includes("\x1b[?1003h"))).toBe(false)
+  })
+
+  test("a crash during the first render: no protocol enable, no paint, startup never completes", async () => {
+    function CrashOnMount() {
+      useLayoutEffect(() => {
+        recordAppCrash(new Error("mount boom"))
+      }, [])
+      return <Text>mount</Text>
+    }
+    const started = Promise.resolve(
+      createApp(() => () => ({})).run(<CrashOnMount />, {
+        ...(options(loggedStdout("out")) as object),
+        alternateScreen: true,
+        mouse: true,
+      } as never),
+    )
+
+    expect(await stillPending(started, 150)).toBe(true)
+    const restore = log.findIndex((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))
+    // The report is recordAppCrash's last write: nothing follows it.
+    const report = log.findIndex(
+      (line) => line.startsWith("err:") && line.includes("process crash: mount boom"),
+    )
+    expect(restore).toBeGreaterThanOrEqual(0)
+    expect(report).toBeGreaterThan(restore)
+    expect(log.slice(report + 1)).toEqual([])
+    expect(log.some((line) => line.includes("\x1b[?1003h"))).toBe(false)
+  })
+
+  test("with no live app it is a no-op", () => {
+    const exitCode = process.exitCode
+    recordAppCrash(new Error("nobody home"))
+    expect(log).toEqual([])
+    expect(readdirSync(dumpDir)).toEqual([])
+    expect(process.exitCode).toBe(exitCode)
   })
 })

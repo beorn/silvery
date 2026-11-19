@@ -415,6 +415,46 @@ const MAX_PANIC_DUMPS_PER_RUN = (() => {
 let _processPanicDumpCount = 0
 let _processPanicCircuitBroken = false
 
+/**
+ * One live interactive app's process-crash step: stop it, keep its panic record, restore its terminal.
+ * Registered for the same lifetime the app's process listeners had (non-headless, from init until cleanup or startup
+ * rollback); module-private, reached only through {@link recordAppCrash}.
+ */
+type AppCrashRecorder = (error: Error, title: string) => void
+const liveAppCrashRecorders = new Set<AppCrashRecorder>()
+
+/**
+ * Record a process crash for every live interactive silvery app in this process. A process entry passes it to its
+ * one crash handler, e.g. loggily's `installCrashHandler({ logger, restore: recordAppCrash })`; silvery itself
+ * registers no process listener (ADR-0031 decision 3, #31167).
+ *
+ * For each app: it stops (no later paint, mode change or normal-success completion: `run()`, `waitUntilExit()` and
+ * frame iteration stay pending, so an entry's own exit cannot race the handler's), writes its existing panic record
+ * (dump file and stderr report, under the existing `SILVERY_AUTO_PANIC_MAX_DUMPS` cap), and restores the terminal
+ * through its existing cleanup. Each stage is attempted even when an earlier one throws, and every app is attempted;
+ * the first error is rethrown after that. It never exits the process. Zero live apps, or an app already crash-stopped,
+ * is a no-op. Synchronous terminal writes cannot be time-bounded.
+ */
+export function recordAppCrash(error: Error, options?: { readonly title?: string }): void {
+  const title = options?.title?.trim() || "process crash"
+  let failure: { readonly error: unknown } | undefined
+  // Newest first: each app's output guard wraps the process streams its predecessor already wrapped, so teardown
+  // unwinds them in reverse, as nested scopes do. Oldest-first restored a stale stream and lost the later reports.
+  for (const record of [...liveAppCrashRecorders].reverse()) {
+    try {
+      record(error, title)
+    } catch (err) {
+      failure ??= { error: err }
+    }
+  }
+  if (failure !== undefined) throw failure.error
+}
+
+/** An awaited continuation of a crash-stopped app parks here: it never resumes, so it can neither paint nor finish. */
+function parkForever(): Promise<never> {
+  return new Promise<never>(() => {})
+}
+
 const STRICT_MODE = (() => {
   return isStrictEnabled("incremental", 1)
 })()
@@ -1172,6 +1212,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let startupCleanup: (() => void) | null = null
   let startupScopeDispose: (() => Promise<void>) | null = null
   let shouldExit = false
+  // Set once by this app's recordAppCrash step. Unlike shouldExit, it also holds every awaited continuation (startup,
+  // pump completion, frame iteration) and every paint/mode write, so nothing reaches the terminal or a normal-success
+  // completion after the crash restore. Normal exits never set it.
+  let crashStopped = false
 
   const registerStartupCleanup = (cleanup: () => void): void => {
     if (startupResourcesTransferred) return
@@ -1909,12 +1953,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Cleanup state
   let cleanedUp = false
   let storeUnsubscribeFn: (() => void) | null = null
-  let processUncaughtHandler:
-    | ((error: Error, origin: NodeJS.UncaughtExceptionOrigin) => void)
-    | null = null
-  let processUnhandledRejectionHandler:
-    | ((reason: unknown, promise: Promise<unknown>) => void)
-    | null = null
+  // This app's entry in liveAppCrashRecorders while it is live and interactive.
+  let appCrashRecorder: AppCrashRecorder | null = null
 
   // Errors caught by SilveryErrorBoundary — flushed to stderr on cleanup so
   // the user sees them after the alt screen exits. Also dumped to a temp file
@@ -2705,22 +2745,33 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // @km/silvery/layout-shift-instrumentation-cls.
   const clsMonitor = createClsMonitor()
 
-  // Cleanup function - idempotent, can be called from exit() or finally
-  const cleanup = () => {
+  // Cleanup function - idempotent, can be called from exit() or finally.
+  //
+  // `failures` is passed only by the crash step (recordAppCrash): each owner callback that runs before the terminal
+  // reset is then caught into it, so one failing owner cannot abandon the reset and the panic report behind it. Without
+  // it (every normal exit) those callbacks throw exactly as before.
+  const cleanup = (failures?: unknown[]) => {
     if (cleanedUp) return
     cleanedUp = true
-
-    if (processUncaughtHandler) {
-      process.off("uncaughtException", processUncaughtHandler)
-      processUncaughtHandler = null
+    const ownerStep = (step: () => void): void => {
+      if (failures === undefined) {
+        step()
+        return
+      }
+      try {
+        step()
+      } catch (error) {
+        failures.push(error)
+      }
     }
-    if (processUnhandledRejectionHandler) {
-      process.off("unhandledRejection", processUnhandledRejectionHandler)
-      processUnhandledRejectionHandler = null
+
+    if (appCrashRecorder) {
+      liveAppCrashRecorders.delete(appCrashRecorder)
+      appCrashRecorder = null
     }
 
     // Log keypress performance summary before teardown (only emits when TRACE was active)
-    logExitSummary()
+    ownerStep(logExitSummary)
 
     // Surface recovered standalone convergence cap-exceeds at teardown so they
     // never go silent (NO SILENT ERRORS). A high lifetime total can be normal
@@ -2730,19 +2781,21 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // frame — that is the persistent feedback edge worth a loud warn.
     // Routed through loggily (DEBUG_LOG file in fullscreen).
     if (standaloneCapExceedCount > 0) {
-      const summary =
-        `standalone convergence cap exceeded ${standaloneCapExceedCount}× this session ` +
-        `(max consecutive streak ${standaloneCapExceedMaxStreak}×; each handled non-lossily ` +
-        `via a follow-up frame — no dropped paint). ` +
-        `Bead: @km/silvercode/19383.`
-      if (standaloneCapExceedMaxStreak >= STANDALONE_CAP_EXCEED_WARN_STREAK_THRESHOLD) {
-        log.warn?.(
-          `${summary} This consecutive streak is high enough to indicate a feedback edge that needs ` +
-            `bounding at the source (re-run with SILVERY_INSTRUMENT=1 for the breakdown).`,
-        )
-      } else {
-        log.debug?.(summary)
-      }
+      ownerStep(() => {
+        const summary =
+          `standalone convergence cap exceeded ${standaloneCapExceedCount}× this session ` +
+          `(max consecutive streak ${standaloneCapExceedMaxStreak}×; each handled non-lossily ` +
+          `via a follow-up frame — no dropped paint). ` +
+          `Bead: @km/silvercode/19383.`
+        if (standaloneCapExceedMaxStreak >= STANDALONE_CAP_EXCEED_WARN_STREAK_THRESHOLD) {
+          log.warn?.(
+            `${summary} This consecutive streak is high enough to indicate a feedback edge that needs ` +
+              `bounding at the source (re-run with SILVERY_INSTRUMENT=1 for the breakdown).`,
+          )
+        } else {
+          log.debug?.(summary)
+        }
+      })
     }
 
     // Pass-cause histogram (only emits when SILVERY_INSTRUMENT=1; no-op
@@ -2756,14 +2809,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     //
     // Reset after emission so the next app's histogram doesn't double-count.
     if (INSTRUMENT) {
-      const file = process.env.SILVERY_INSTRUMENT_FILE
-      if (file) appendHistogramJson(file)
-      if (process.env.SILVERY_INSTRUMENT_PRINT === "1") printPassHistogram()
-      resetPassHistogram()
+      ownerStep(() => {
+        const file = process.env.SILVERY_INSTRUMENT_FILE
+        if (file) appendHistogramJson(file)
+        if (process.env.SILVERY_INSTRUMENT_PRINT === "1") printPassHistogram()
+        resetPassHistogram()
+      })
     }
 
-    bytesOutMonitor?.dispose()
-    memMonitor?.dispose()
+    ownerStep(() => bytesOutMonitor?.dispose())
+    ownerStep(() => memMonitor?.dispose())
 
     // Unmount React tree first — this runs effect cleanups (clears intervals,
     // cancels subscriptions) before we tear down the infrastructure.
@@ -2787,15 +2842,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // via fiber teardown above. cleanup() stays synchronous so terminal
     // restoration cannot wait behind user async disposers; startup rollback
     // awaits the memoized promise after this function has restored the terminal.
-    void disposeAppScope("app-exit")
+    ownerStep(() => void disposeAppScope("app-exit"))
 
     // Unregister node lifecycle hooks
-    setContainerNodeLifecycle(container, null)
+    ownerStep(() => setContainerNodeLifecycle(container, null))
 
     // Unsubscribe from store
-    if (storeUnsubscribeFn) {
-      storeUnsubscribeFn()
-    }
+    if (storeUnsubscribeFn) ownerStep(storeUnsubscribeFn)
 
     // Unsubscribe from provider state changes
     stateUnsubscribes.forEach((unsub) => {
@@ -2909,7 +2962,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Cleanup providers — stdin is already cleaned up above for TTY,
     // but provider cleanup handles other resources (resize listeners, etc.)
-    for (const sub of islandModeSubscriptions.values()) sub.unsubscribe()
+    for (const sub of islandModeSubscriptions.values()) ownerStep(() => sub.unsubscribe())
     islandModeSubscriptions.clear()
     providerCleanups.forEach((fn) => {
       try {
@@ -2928,11 +2981,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (!injectedTerm) {
       // Only dispose locally-owned Modes. A Term-owned Modes is disposed by
       // the Term's own Symbol.dispose (see term.ts).
-      modes[Symbol.dispose]()
+      ownerStep(() => modes[Symbol.dispose]())
     }
 
     // Dispose runtime
-    runtime[Symbol.dispose]()
+    ownerStep(() => runtime[Symbol.dispose]())
 
     // SILVERY_STRICT canary — bound `process.stdout` resize listener count.
     //
@@ -2991,9 +3044,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Only dispose if we constructed the Output; an injected Term owns its
     // final disposal, but this app still deactivates its interception cycle.
     if (output) {
-      if (ownsOutput) output.dispose()
-      else output.deactivate()
+      const owned = output
       output = null
+      ownerStep(() => (ownsOutput ? owned.dispose() : owned.deactivate()))
     }
 
     // Flush explicit app panics after terminal cleanup so the diagnostic lands
@@ -3070,6 +3123,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   if (signalExit.requested) exit()
 
   const panicApp = (reason: unknown, options?: PanicOptions) => {
+    // After a process crash the app is already recorded and restored, and the process exit belongs to the entry's
+    // crash handler: a late render or standalone-frame panic must not write a second record or reach exit(2) below.
+    if (crashStopped) return
     recordPanic(reason, options)
 
     // Circuit-break hard-exit: once the per-process dump cap fires, force
@@ -3114,21 +3170,36 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     })()
   }
 
+  // Process crashes are owned by the process entry's one crash handler (ADR-0031 decision 3, #31167); silvery registers
+  // no process listener. A live interactive app joins the private set recordAppCrash walks, for the lifetime its
+  // process listeners had: from here until cleanup() or the startup rollback.
   if (!headless) {
-    processUncaughtHandler = (error: Error) => {
-      panicApp(error, { title: "uncaughtException" })
-    }
-    processUnhandledRejectionHandler = (reason: unknown) => {
-      panicApp(reason, { title: "unhandledRejection" })
-    }
-    registerStartupCleanup(() => {
-      if (processUncaughtHandler) process.off("uncaughtException", processUncaughtHandler)
-      if (processUnhandledRejectionHandler) {
-        process.off("unhandledRejection", processUnhandledRejectionHandler)
+    const recorder: AppCrashRecorder = (error, title) => {
+      if (crashStopped) return
+      crashStopped = true
+      shouldExit = true
+      // Each stage is attempted even when an earlier one throws, so a failed record never skips this app's restore.
+      const failures: unknown[] = []
+      const stage = (step: () => void): void => {
+        try {
+          step()
+        } catch (err) {
+          failures.push(err)
+        }
       }
+      stage(disableInteractiveProtocolsEarly)
+      // exitCode 1 also holds at the dump cap; the process exit itself belongs to the entry's crash handler, never to
+      // panicApp's exit(2) branch, which this path does not reach.
+      stage(() => recordPanic(error, { title, exitCode: 1 }))
+      stage(() => cleanup(failures))
+      if (failures.length > 0) throw failures[0]
+    }
+    appCrashRecorder = recorder
+    liveAppCrashRecorders.add(recorder)
+    registerStartupCleanup(() => {
+      liveAppCrashRecorders.delete(recorder)
+      if (appCrashRecorder === recorder) appCrashRecorder = null
     })
-    process.on("uncaughtException", processUncaughtHandler)
-    process.on("unhandledRejection", processUnhandledRejectionHandler)
   }
 
   const standaloneFrameTasks = new Set<Promise<void>>()
@@ -3611,6 +3682,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   isRendering = true
   try {
     currentBuffer = doRender()
+    // Crash-stopped during the first render (e.g. by a mount effect): enable no protocol, never finish startup.
+    if (crashStopped) await parkForever()
 
     if (!headless) {
       // Legacy app-level Kitty keyboard protocol. Focused islands are applied
@@ -3632,6 +3705,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const result = sessionInput
               ? await detectKittyWithProbe(sessionInput)
               : { supported: false }
+            // A crash restored the terminal while the probe was out: enable nothing, never finish startup.
+            if (crashStopped) await parkForever()
             if (result.supported) {
               legacyKittyFlags = defaultKittyFlags
               setKittyKeyboardMode(defaultKittyFlags, "setup")
@@ -3711,6 +3786,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     while (initCommitLoops < MAX_CONVERGENCE_PASSES) {
       renderer.commitLayout()
       await Promise.resolve()
+      if (crashStopped) break
       if (!pendingRerender) break
       pendingRerender = false
       currentBuffer = doRender()
@@ -3720,6 +3796,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   } finally {
     isRendering = false
   }
+  // A crash during the initial commit loop: no first paint, no later mode enables, and run() never resolves.
+  if (crashStopped) await parkForever()
   paintFrame()
   if (_perfLog) {
     perfLog.debug?.(
@@ -3734,6 +3812,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Update runtimeContextValue in-place so useApp()/useRuntime() sees the latest values.
   if (!headless) {
     runtimeContextValue.pause = () => {
+      if (crashStopped) return
       renderPaused = true
       // Deactivate the output owner so console-mode writes (e.g., log dump)
       // reach the terminal directly. Owner is retained — resume() re-activates.
@@ -3741,6 +3820,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (alternateScreen) stdout.write(leaveAlternateScreen())
     }
     runtimeContextValue.resume = () => {
+      // After a crash restore, resuming would re-enter the alternate screen over the report.
+      if (crashStopped) return
       if (alternateScreen) stdout.write(enterAlternateScreen())
       renderPaused = false
       // Re-activate the output owner (deactivated during pause)
@@ -4083,6 +4164,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   function paintFrame(): void {
+    // Every paint (startup, resume, the late standalone drain, input) ends here; nothing paints after a crash restore.
+    if (crashStopped) return
     if (!currentBuffer) return
     refreshContentSelectionProjection()
     let fullscreenDamageRepairThisFrame = false
@@ -5468,6 +5551,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         if (buf) emitFrame(buf)
       }
     } finally {
+      // A crash-stopped app has already been restored by recordAppCrash. Its normal completion (abort, framesDone,
+      // the frame waiter, exitResolve) must not run while the entry's crash handler flushes, or an entry awaiting
+      // waitUntilExit() or iterating frames would continue to its own success path and race the crash exit.
+      if (crashStopped) await parkForever()
       // Error exits reach this path without going through exit(). Stop every
       // producer before beginning the joined teardown below.
       controller.abort()
@@ -5521,6 +5608,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   // Start loop in background
   eventLoop().catch((err: unknown) => {
+    // Already crash-stopped: the record and restore happened; this second report would land after them.
+    if (crashStopped) return
     cleanup() // exit alt screen so error is visible in normal terminal
     const errObj = err instanceof Error ? err : new Error(String(err))
     const msg = errObj.message
@@ -5787,6 +5876,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     [Symbol.asyncIterator](): AsyncIterator<Buffer> {
       return {
         async next(): Promise<IteratorResult<Buffer>> {
+          // After a crash the iteration neither yields nor ends: "done" would run the consumer's success path.
+          if (crashStopped) await parkForever()
           if (framesDone || shouldExit) {
             return { done: true, value: undefined as unknown as Buffer }
           }
@@ -5800,6 +5891,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             }
             frameResolve = resolve
           })
+          if (crashStopped) await parkForever()
 
           // null sentinel means done
           if (!buf) {

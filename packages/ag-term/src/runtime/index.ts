@@ -149,6 +149,7 @@ export type { StoreConfig, StoreApi } from "@silvery/create/store"
 // Layer 3: Store integration (canonical home: @silvery/ag-term/runtime/create-app)
 export {
   createApp,
+  recordAppCrash,
   useApp,
   useAppShallow,
   StoreContext,
