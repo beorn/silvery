@@ -2877,8 +2877,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Skipped when `input: false`: the host owns stdin; we never attached
       // listeners and must not remove anything the host installed.
       if (hostOwnsStdin) {
-        stdin.removeAllListeners("data")
-        stdin.pause()
+        // An owner step: a stdin that throws here must not abandon the protocol reset below (crash path only).
+        ownerStep(() => {
+          stdin.removeAllListeners("data")
+          stdin.pause()
+        })
       }
 
       // Step 2: Send ALL protocol disable sequences unconditionally.

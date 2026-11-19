@@ -347,6 +347,32 @@ describe("recordAppCrash()", () => {
     expect(log.slice(settledLength)).toEqual([])
   })
 
+  test("an owner callback that throws before the terminal reset does not abandon the reset or the report", async () => {
+    const stdin = createMockStdin()
+    const handle = await run(<Text>owner</Text>, {
+      ...(options(loggedStdout("out")) as object),
+      stdin,
+    } as never)
+    handles.push(handle)
+    // A genuinely throwing owner stage: cleanup stops consuming stdin before it resets the terminal.
+    Object.assign(stdin, {
+      removeAllListeners() {
+        throw new Error("stdin owner boom")
+      },
+    })
+
+    expect(() => recordAppCrash(new Error("owner crash"))).toThrow("stdin owner boom")
+
+    const restore = log.findIndex((line) => line.startsWith("out:") && line.includes("\x1b[?1049l"))
+    const report = log.findIndex(
+      (line) => line.startsWith("err:") && line.includes("process crash: owner crash"),
+    )
+    expect(restore).toBeGreaterThanOrEqual(0)
+    expect(report).toBeGreaterThan(restore)
+    expect(readdirSync(dumpDir).filter((name) => name.startsWith("silvery-panic-"))).toHaveLength(1)
+    expect(process.exitCode).toBe(1)
+  })
+
   test("two live apps: each gets its own record and restore", async () => {
     const first = await run(<Text>one</Text>, options(loggedStdout("one")))
     const second = await run(<Text>two</Text>, options(loggedStdout("two")))
