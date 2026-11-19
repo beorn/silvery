@@ -273,7 +273,7 @@ describe("auto-panic circuit-break", () => {
       first.unmount()
       second.unmount()
     } finally {
-      rmSync(dir, { recursive: true, force: true })
+      rmSync(dir, { recursive: true, force: true }) // raw-delete-allow: the SILVERY_DUMP_DIR this test made with mkdtempSync
     }
   })
 
@@ -292,7 +292,7 @@ describe("auto-panic circuit-break", () => {
       expect(readFileSync(second!, "utf8")).toBe("second app")
     } finally {
       now.mockRestore()
-      rmSync(dir, { recursive: true, force: true })
+      rmSync(dir, { recursive: true, force: true }) // raw-delete-allow: the SILVERY_DUMP_DIR this test made with mkdtempSync
     }
   })
 })

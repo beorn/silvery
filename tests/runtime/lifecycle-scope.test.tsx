@@ -483,7 +483,7 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
       encoding: "utf8",
       env: { ...process.env, SILVERY_SCOPE_TRACE: "1", SILVERY_DUMP_DIR: dumpDir },
     })
-    rmSync(dumpDir, { recursive: true, force: true })
+    rmSync(dumpDir, { recursive: true, force: true }) // raw-delete-allow: the SILVERY_DUMP_DIR this test made with mkdtempSync
 
     expect(result.status, result.stderr).toBe(0)
     const record = JSON.parse(

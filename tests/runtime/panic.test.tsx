@@ -240,7 +240,7 @@ describe("recordAppCrash()", () => {
     process.stdout.write = origStdoutWrite
     process.exitCode = origExitCode
     vi.unstubAllEnvs()
-    rmSync(dumpDir, { recursive: true, force: true })
+    rmSync(dumpDir, { recursive: true, force: true }) // raw-delete-allow: the SILVERY_DUMP_DIR this test made with mkdtempSync
   })
 
   /** A terminal whose writes land in the shared log, so stdout and stderr order is one sequence. */
