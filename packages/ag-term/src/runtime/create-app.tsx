@@ -201,7 +201,7 @@ import { createModes, type MouseTrackingMode } from "./devices/modes"
 import { deriveProtocolModesFromFocusSubtree } from "./island-aggregator"
 import type { Term } from "../ansi/term"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
-import { createLogger, setLogLevel } from "loggily"
+import { createLogger, getDebugFilter, setDebugFilter, setLogLevel } from "loggily"
 import {
   createRenderer,
   createSearchScrollback,
@@ -228,7 +228,11 @@ import {
 } from "./pass-cause"
 
 const log = createLogger("silvery:app")
-const traceLog = createLogger("silvery:trace")
+// Created when the trace starts, never at import: loggily binds its methods to the level in force when the
+// logger is made, so a LOG_LEVEL quieter than debug here would leave `info` undefined and the later level
+// lift below would have nothing to lift — the trace would emit nothing at all and say nothing about it.
+let traceLog: ReturnType<typeof createLogger> | undefined
+const trace = () => (traceLog ??= createLogger("silvery:trace"))
 
 // Above this many consecutive standalone frames that hit the convergence cap,
 // the teardown summary escalates from debug to a loud warn: the follow-up-frame
@@ -1626,7 +1630,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         decoded.length > 400
           ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
           : decoded
-      traceLog.info?.(`[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}`)
+      trace().info?.(`[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}`)
       return (_origStdoutWrite as Function).call(this, chunk, ...args)
     } as typeof stdout.write
 
@@ -1644,11 +1648,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const _prevLevelName = _prevLogLevelEnv?.toLowerCase()
     const _lowerLogLevel = _prevLevelName !== "trace" && _prevLevelName !== "debug"
     if (_lowerLogLevel) setLogLevel("debug")
+    traceLog ??= createLogger("silvery:trace")
+    // With DEBUG set, loggily treats every record as debug and drops those whose namespace DEBUG does not
+    // name, before any sink — so lifting the level alone still loses the whole trace. Name it, then restore.
+    const _prevDebugFilter = getDebugFilter()
+    setDebugFilter([...(_prevDebugFilter ?? []), "silvery:trace"])
     registerProviderCleanup(() => {
       if (!_lowerLogLevel) return
       if (_prevLogLevelEnv === undefined) delete process.env.LOG_LEVEL
       else process.env.LOG_LEVEL = _prevLogLevelEnv
     })
+    registerProviderCleanup(() => setDebugFilter(_prevDebugFilter))
   }
 
   // SILVERY_CAPTURE_OUTPUT: append every emitted frame to a file for ANSI
@@ -3655,8 +3665,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (_ansiTrace) {
       // Opens the trace once the Output owner above holds stderr/console, so
       // it lands with the rest of the trace rather than on the terminal.
-      traceLog.info?.("=== SILVERY TRACE START ===")
-      traceLog.info?.("=== ALT SCREEN + CLEAR ===")
+      trace().info?.("=== SILVERY TRACE START ===")
+      trace().info?.("=== ALT SCREEN + CLEAR ===")
     }
     if (alternateScreen) {
       // Route through modes so the owner tracks state for race-free dispose.
@@ -3679,7 +3689,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // paint, otherwise a resumed transcript can publish an intermediate layout
   // before the startup convergence loop reaches the stable bottom pin.
   if (_ansiTrace) {
-    traceLog.info?.("=== INITIAL RENDER ===")
+    trace().info?.("=== INITIAL RENDER ===")
   }
   isRendering = true
   try {
@@ -3752,7 +3762,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // dropped before the event loop subscribes.
     }
     if (_ansiTrace) {
-      traceLog.info?.("=== RUNTIME.RENDER (initial) ===")
+      trace().info?.("=== RUNTIME.RENDER (initial) ===")
     }
     // Settle the deferred-rect convergence BEFORE the first user-visible
     // paintFrame. Each iteration:
@@ -4042,7 +4052,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (_ansiTrace) {
       const _case = inEventHandler ? "1:event" : isRendering ? "2:rendering" : "3:standalone"
       const stack = new Error().stack?.split("\n").slice(1, 5).join("\n") ?? ""
-      traceLog.info?.(
+      trace().info?.(
         `=== SUBSCRIPTION (case ${_case}, render #${renderer.renderCount() + 1}) ===\n${stack}`,
       )
     }
