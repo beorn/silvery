@@ -36,8 +36,8 @@
     "@silvery/ag": "0.29.0",
     "@silvery/ag-react": "0.29.0",
     "@silvery/ag-term": "0.29.0",
-    "@silvery/ansi": "0.29.3",
-    "@silvery/signals": "0.29.3"
+    "@silvery/ansi": "0.30.0",
+    "@silvery/signals": "0.30.0"
   },
   "tsdown": {
     "clean": true,

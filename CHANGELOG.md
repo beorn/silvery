@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-11-25
+
 ### Added
 
 - `silvery/pipe`: the one composition primitive (`pipe` + `AppPlugin`, implemented once in `@silvery/create/pipe`) is now a standalone published subpath. It imports nothing, so a consumer outside Silvery's app surface can pin it by exact version and compose values without importing the app barrel or any UI dependency. Overloads now cover up to twelve plugins. (32325 Slice A)
