@@ -382,6 +382,19 @@ interface GuardedRun {
  * default Output owner — the guard every fullscreen TUI runs under — and
  * observe each surface a person would see.
  */
+/**
+ * loggily's file writer buffers and flushes on a 100 ms timer (or 4096 bytes), with no flush API, so a read
+ * taken right after a run can miss the tail. Wait, bounded, for what the caller is about to assert on.
+ */
+async function readLogWhen(file: string, ready: (text: string) => boolean, ms = 5_000): Promise<string> {
+  const end = Date.now() + ms
+  for (;;) {
+    const text = readFileSync(file, "utf8")
+    if (ready(text) || Date.now() > end) return text
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+}
+
 async function runGuardedFullscreen(ns: string | string[]): Promise<GuardedRun> {
   // vi.resetModules() ran in beforeEach: import loggily before the runtime so
   // the writer registers on the same instance createApp binds.
@@ -495,7 +508,9 @@ describe("createApp diagnostic text goes to loggily, never a fixed /tmp file (31
 
       const run = await runGuardedFullscreen("silvery:trace")
 
-      expect(readFileSync(debugLog, "utf8")).toMatch(/\[\d{4}\] \+\d+ms \(\d+b\): /)
+      expect(await readLogWhen(debugLog, (text) => /\[\d{4}\] \+\d+ms \(\d+b\): /.test(text))).toMatch(
+        /\[\d{4}\] \+\d+ms \(\d+b\): /,
+      )
       expect(run.paintedWhileRunning + run.stderrAfterExit).not.toMatch(
         /\[\d{4}\] \+\d+ms \(\d+b\): /,
       )
@@ -519,7 +534,14 @@ describe("createApp diagnostic text goes to loggily, never a fixed /tmp file (31
 
       await runGuardedFullscreen("silvery:trace")
 
-      const text = readFileSync(debugLog, "utf8")
+      const text = await readLogWhen(
+        debugLog,
+        (seen) =>
+          seen.includes("=== SILVERY TRACE START ===") &&
+          seen.includes("=== ALT SCREEN + CLEAR ===") &&
+          seen.includes("--- doRender #1 ") &&
+          /\[\d{4}\] \+\d+ms \(\d+b\): /.test(seen),
+      )
       expect(text).toContain("=== SILVERY TRACE START ===")
       expect(text).toContain("=== ALT SCREEN + CLEAR ===")
       expect(text).toContain("--- doRender #1 ")
