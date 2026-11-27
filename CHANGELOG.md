@@ -7,8 +7,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.31.0] - 2026-11-27
-
 ### Changed
 
 - **Breaking for `import { z } from "@silvery/commander"`:** zod moved off the main entry to its own subpath, `@silvery/commander/z`. The main entry used to re-export `z` from `./z.ts`, so an unbundled consumer evaluated that module on import: 95 zod modules on every process start, including for programs that never touch `z`. Import it as `import { z } from "@silvery/commander/z"`. (38877)
