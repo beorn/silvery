@@ -2,13 +2,13 @@
  * Extended Zod object with CLI types.
  *
  * Spreads all of Zod's exports and adds CLI-specific schemas.
- * zod is a required peer dependency (^4): the main entry loads this module,
- * so an unbundled consumer without zod fails at import. A bundler may still
- * drop it when `z` is unused.
+ * This is a subpath of its own: the main entry no longer evaluates this module, so a consumer that never imports
+ * `@silvery/commander/z` never loads zod at all. zod is a required peer dependency (^4) of this subpath.
  *
  * @example
  * ```ts
- * import { z, Command } from "@silvery/commander"
+ * import { Command } from "@silvery/commander"
+ * import { z } from "@silvery/commander/z"
  *
  * new Command("deploy")
  *   .option("-p, --port <n>", "Port", z.port)

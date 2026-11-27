@@ -28,6 +28,3 @@ export {
   intRange,
 } from "./presets.ts"
 export type { CLIType, StandardSchemaV1 } from "./presets.ts"
-
-// Tree-shakeable: only evaluated if user imports z
-export { z } from "./z.ts"
